@@ -1,0 +1,43 @@
+# Quantum Storm SQL Lab - Frontend Dependencies
+
+## Node.js Dependencies (from package.json)
+
+### Runtime Dependencies
+react==18.2.0
+react-dom==18.2.0
+lucide-react==0.294.0
+
+### Development Dependencies
+@types/react==18.2.43
+@types/react-dom==18.2.17
+@vitejs/plugin-react==4.2.1
+autoprefixer==10.4.16
+postcss==8.4.32
+tailwindcss==3.3.6
+vite==5.0.8
+
+## Installation
+
+### Frontend (Node.js)
+```bash
+npm install
+```
+
+### Future Backend (Python - if needed)
+This project is currently frontend-only. If you plan to add a Python backend for SQL execution:
+```bash
+pip install -r requirements.txt
+```
+
+## Tech Stack
+- **Framework**: React 18 with Vite
+- **Styling**: Tailwind CSS 3
+- **Icons**: Lucide React
+- **Build Tool**: Vite 5
+
+## Development
+```bash
+npm run dev    # Start development server
+npm run build  # Build for production
+npm run preview # Preview production build
+```
