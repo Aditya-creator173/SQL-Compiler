@@ -147,6 +147,7 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [theme, setTheme] = useState('dark');
+  const [isThemeHovered, setIsThemeHovered] = useState(false);
   const [query, setQuery] = useState('SELECT * FROM users WHERE status = "Active" LIMIT 10;');
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -222,7 +223,7 @@ function App() {
           <div className="w-96 rounded-lg shadow-2xl p-6" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold" style={{ color: colors.text }}>Settings</h2>
-              <button onClick={() => setIsSettingsOpen(false)} className="p-1 rounded hover:opacity-70">
+              <button onClick={() => setIsSettingsOpen(false)} className="p-1 rounded hover:opacity-70 hover:scale-125 transition-all hover:bg-opacity-10" style={{ backgroundColor: colors.bgSecondary }}>
                 <X className="w-5 h-5" style={{ color: colors.textMuted }} />
               </button>
             </div>
@@ -284,17 +285,23 @@ function App() {
                   {/* Theme Toggle */}
                   <button
                     onClick={toggleTheme}
-                    className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80"
+                    onMouseEnter={() => setIsThemeHovered(true)}
+                    onMouseLeave={() => setIsThemeHovered(false)}
+                    className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
                     style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
                   >
-                    {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                    {theme === 'dark' ? (
+                      isThemeHovered ? <Moon className="w-4 h-4 fill-current" /> : <Moon className="w-4 h-4" />
+                    ) : (
+                      <Sun className="w-4 h-4" />
+                    )}
                   </button>
 
                   {/* Menu Dropdown */}
                   <div className="relative">
                     <button
                       onClick={() => setIsMenuOpen(!isMenuOpen)}
-                      className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80"
+                      className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
                       style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
                     >
                       <Menu className="w-4 h-4" />
@@ -305,7 +312,7 @@ function App() {
                       <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
                         <button 
                           onClick={() => { setIsSettingsOpen(true); setIsMenuOpen(false); }}
-                          className="w-full px-4 py-3 flex items-center gap-3 hover:opacity-80 transition-colors text-left text-sm"
+                          className="w-full px-4 py-3 flex items-center gap-3 hover:opacity-80 hover:bg-opacity-50 transition-all text-left text-sm"
                           style={{ color: colors.textSecondary }}
                         >
                           <Settings className="w-4 h-4" />
@@ -322,7 +329,7 @@ function App() {
                   <button
                     onClick={handleRunQuery}
                     disabled={isLoading}
-                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 hover:shadow-lg"
                   >
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -333,14 +340,14 @@ function App() {
                   </button>
                   <button 
                     onClick={handleClearQuery}
-                    className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80"
+                    className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
                     style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
                   >
                     Clear
                   </button>
                   <button 
                     onClick={handleFormatQuery}
-                    className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80"
+                    className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
                     style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
                   >
                     Format
@@ -369,8 +376,8 @@ function App() {
               <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary }}>
                 {/* Header */}
                 <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-                  <Wand2 className="w-5 h-5 text-fuchsia-400" />
-                  <h2 className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-400">
+                  <Wand2 className="w-5 h-5 text-orange-400" />
+                  <h2 className="font-semibold text-orange-500">
                     AI Assistant
                   </h2>
                 </div>
@@ -382,9 +389,9 @@ function App() {
                       <div className={`max-w-[80%] rounded-lg p-3 ${
                         msg.role === 'user' 
                           ? '' 
-                          : 'bg-fuchsia-500/10 backdrop-blur-md border border-fuchsia-500/20'
+                          : 'bg-orange-500/10 backdrop-blur-md border border-orange-500/20'
                       }`} style={msg.role === 'user' ? { backgroundColor: colors.bgTertiary, color: colors.text } : { color: colors.text }}>
-                        {msg.role === 'ai' && <Sparkles className="w-4 h-4 text-fuchsia-400 inline mr-2" />}
+                        {msg.role === 'ai' && <Sparkles className="w-4 h-4 text-orange-400 inline mr-2" />}
                         <span className="text-sm">{msg.content}</span>
                       </div>
                     </div>
@@ -405,8 +412,8 @@ function App() {
                     />
                     <button
                       onClick={handleSendMessage}
-                      className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-2"
-                    >
+                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-2"
+                      >
                       <Send className="w-4 h-4" />
                     </button>
                   </div>
