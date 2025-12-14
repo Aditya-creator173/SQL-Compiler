@@ -1,4 +1,4 @@
-# Quantum Storm SQL Lab 🚀
+# SQL Learning Lab 🚀
 
 A futuristic, high-end SQL learning IDE with a deep space cyber-aesthetic. Built with React, Vite, and Tailwind CSS.
 
