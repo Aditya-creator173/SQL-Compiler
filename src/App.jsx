@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Play, Database, Wand2, Terminal, ChevronRight, Key, Table, Loader2, Sparkles, Send, LogIn, Lock, User, Menu, Settings, FileCode, Box, Moon, Sun, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Database, Wand2, Terminal, ChevronRight, Key, Table, Loader2, Sparkles, Send, LogIn, LogOut, Lock, User, Menu, Settings, FileCode, Box, Moon, Sun, X } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 // Discord Color Themes
@@ -62,7 +62,181 @@ const MOCK_RESULTS = [
   { id: 3, email: 'test3@example.com', username: 'user3', created_at: '2024-03-10 09:15:00', status: 'Pending' },
   { id: 4, email: 'test4@example.com', username: 'user4', created_at: '2024-04-05 16:45:00', status: 'Active' },
   { id: 5, email: 'test5@example.com', username: 'user5', created_at: '2024-05-12 11:30:00', status: 'Inactive' },
+  { id: 5, email: 'test5@example.com', username: 'user5', created_at: '2024-05-12 11:30:00', status: 'Inactive' },
 ];
+
+// Block Definitions
+const BLOCKS = [
+  // DDL
+  {
+    id: 'create_table',
+    label: 'CREATE TABLE',
+    type: 'container',
+    category: 'DDL',
+    color: 'bg-indigo-500',
+    inputs: [
+      { id: 'table_name', placeholder: 'table_name', type: 'text' }
+    ],
+    innerLabel: 'COLUMNS'
+  },
+  {
+    id: 'column',
+    label: 'Column',
+    type: 'simple',
+    category: 'DDL',
+    color: 'bg-emerald-500',
+    inputs: [
+      { id: 'col_name', placeholder: 'col_name', type: 'text' },
+      { id: 'col_type', placeholder: 'INTEGER', type: 'text', preLabel: 'Type' }
+    ]
+  },
+  // DML
+  {
+    id: 'insert',
+    label: 'INSERT INTO',
+    type: 'container',
+    category: 'DML',
+    color: 'bg-blue-600',
+    inputs: [
+      { id: 'table_name', placeholder: 'table', type: 'text' }
+    ],
+    innerLabel: 'VALUES'
+  },
+  {
+    id: 'value_row',
+    label: 'Row Value',
+    type: 'simple',
+    category: 'DML',
+    color: 'bg-sky-500',
+    inputs: [
+      { id: 'val1', placeholder: 'value1', type: 'text' },
+      { id: 'val2', placeholder: 'value2', type: 'text' }
+    ]
+  },
+  {
+    id: 'update',
+    label: 'UPDATE',
+    type: 'container',
+    category: 'DML',
+    color: 'bg-violet-600',
+    inputs: [
+      { id: 'table_name', placeholder: 'table', type: 'text' }
+    ],
+    innerLabel: 'SET'
+  },
+  {
+    id: 'set_assign',
+    label: 'Set',
+    type: 'simple',
+    category: 'DML',
+    color: 'bg-fuchsia-500',
+    inputs: [
+      { id: 'col', placeholder: 'col', type: 'text' },
+      { id: 'val', placeholder: 'val', type: 'text', preLabel: '=' }
+    ]
+  },
+  {
+    id: 'delete',
+    label: 'DELETE FROM',
+    type: 'container',
+    category: 'DML',
+    color: 'bg-rose-600',
+    inputs: [
+      { id: 'table', placeholder: 'table', type: 'text' }
+    ],
+    innerLabel: 'WHERE'
+  },
+  {
+    id: 'condition',
+    label: 'Condition',
+    type: 'simple',
+    category: 'DML',
+    color: 'bg-orange-500',
+    inputs: [
+      { id: 'col', placeholder: 'col', type: 'text' },
+      { id: 'op', placeholder: '=', type: 'text' },
+      { id: 'val', placeholder: 'val', type: 'text' }
+    ]
+  }
+];
+
+// Draggable Block Component
+function DraggableBlock({ block, onDragStart, isPaletteItem = false }) {
+  const isContainer = block.type === 'container';
+
+  // Base classes for both types
+  const baseClasses = `relative font-bold text-white shadow-sm cursor-grab active:cursor-grabbing text-lg select-none ${isPaletteItem ? 'mb-4 hover:scale-105 transition-transform' : ''}`;
+
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, block)}
+      className={baseClasses}
+      style={{ zIndex: isPaletteItem ? 1 : 10 }}
+    >
+      {isContainer ? (
+        // C-Block (Container) Rendering e.g., CREATE TABLE
+        <div className="flex flex-col">
+          {/* Top Bar (Header) */}
+          <div className={`${block.color} px-4 py-3 rounded-t-lg rounded-br-lg flex items-center gap-3 min-w-[300px]`}>
+            <span>{block.label}</span>
+            {block.inputs && block.inputs.map((input, idx) => (
+              <input
+                key={idx}
+                type="text"
+                placeholder={input.placeholder}
+                className="bg-white/20 border-none rounded px-2 py-1 text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[120px]"
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => { }}
+              />
+            ))}
+          </div>
+
+          {/* Middle Section (The C-Shape interior / Slot) */}
+          <div className="flex">
+            {/* The Spine */}
+            <div className={`${block.color} w-8 min-h-[40px] flex items-center justify-center`}>
+              <div className="w-1 h-3/4 bg-white/20 rounded-full"></div>
+            </div>
+            {/* The Slot Area */}
+            <div className="flex-1 bg-black/10 min-h-[40px] rounded-l-lg m-1 inset-shadow flex items-center px-4 text-sm text-gray-400 border border-white/5 border-dashed">
+              <span className="opacity-50 tracking-wider font-mono">{block.innerLabel}</span>
+            </div>
+          </div>
+
+          {/* Bottom Bar (Footer) */}
+          <div className={`${block.color} h-6 rounded-b-lg w-full flex items-center px-4`}>
+            <span className="text-[10px] text-white/50 uppercase tracking-widest">End Block</span>
+          </div>
+        </div>
+      ) : (
+        // Simple Block Rendering e.g., COLUMN
+        <div
+          className={`${block.color} px-4 py-3 rounded-full flex items-center gap-3 min-w-[200px] shadow-lg`}
+          style={{
+            clipPath: !isPaletteItem ? 'polygon(0% 0%, 15% 0%, 20% 5px, 30% 5px, 35% 0%, 100% 0%, 100% 100%, 35% 100%, 30% 95%, 20% 95%, 15% 100%, 0% 100%)' : 'none',
+            marginTop: !isPaletteItem ? '-5px' : '0',
+            marginBottom: !isPaletteItem ? '-5px' : '0'
+          }}
+        >
+          <span>{block.label}</span>
+          {block.inputs && block.inputs.map((input, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              {input.preLabel && <span className="opacity-80 text-sm font-normal">{input.preLabel}</span>}
+              <input
+                type="text"
+                placeholder={input.placeholder}
+                className="bg-white/20 border-none rounded px-2 py-1 text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[100px]"
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => { }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Login Screen Component
 function LoginScreen({ onLogin, theme, onSwitchToSignUp }) {
@@ -79,8 +253,8 @@ function LoginScreen({ onLogin, theme, onSwitchToSignUp }) {
 
   return (
     <div className="h-screen w-full flex items-center justify-center p-4" style={{ backgroundColor: colors.bgTertiary }}>
-      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500" 
-           style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
+      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+        style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/20">
@@ -167,7 +341,7 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!username.trim()) {
       newErrors.username = 'Username is required';
     } else if (username.length < 3) {
@@ -199,7 +373,7 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
     if (validateForm()) {
       // Show success message
       setSuccessMessage('Account created successfully! Redirecting to sign in...');
-      
+
       // Redirect to login after 2 seconds
       setTimeout(() => {
         onSignUp();
@@ -209,8 +383,8 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
 
   return (
     <div className="h-screen w-full flex items-center justify-center p-4" style={{ backgroundColor: colors.bgTertiary }}>
-      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500" 
-           style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
+      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+        style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/20">
@@ -233,10 +407,10 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full border rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                style={{ 
-                  backgroundColor: colors.bgTertiary, 
-                  borderColor: errors.username ? '#ef4444' : colors.border, 
-                  color: colors.text 
+                style={{
+                  backgroundColor: colors.bgTertiary,
+                  borderColor: errors.username ? '#ef4444' : colors.border,
+                  color: colors.text
                 }}
                 placeholder="Choose a username"
               />
@@ -253,10 +427,10 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                style={{ 
-                  backgroundColor: colors.bgTertiary, 
-                  borderColor: errors.email ? '#ef4444' : colors.border, 
-                  color: colors.text 
+                style={{
+                  backgroundColor: colors.bgTertiary,
+                  borderColor: errors.email ? '#ef4444' : colors.border,
+                  color: colors.text
                 }}
                 placeholder="Enter your email"
               />
@@ -273,10 +447,10 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full border rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                style={{ 
-                  backgroundColor: colors.bgTertiary, 
-                  borderColor: errors.password ? '#ef4444' : colors.border, 
-                  color: colors.text 
+                style={{
+                  backgroundColor: colors.bgTertiary,
+                  borderColor: errors.password ? '#ef4444' : colors.border,
+                  color: colors.text
                 }}
                 placeholder="Create a password"
               />
@@ -293,10 +467,10 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full border rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                style={{ 
-                  backgroundColor: colors.bgTertiary, 
-                  borderColor: errors.confirmPassword ? '#ef4444' : colors.border, 
-                  color: colors.text 
+                style={{
+                  backgroundColor: colors.bgTertiary,
+                  borderColor: errors.confirmPassword ? '#ef4444' : colors.border,
+                  color: colors.text
                 }}
                 placeholder="Confirm your password"
               />
@@ -349,6 +523,7 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [theme, setTheme] = useState('dark');
+  const [activeMode, setActiveMode] = useState('normal'); // 'normal' | 'block'
   const [isThemeHovered, setIsThemeHovered] = useState(false);
   const [query, setQuery] = useState('SELECT * FROM users WHERE status = "Active" LIMIT 10;');
   const [results, setResults] = useState(null);
@@ -357,6 +532,24 @@ function App() {
     { role: 'ai', content: 'Welcome to SQL Thinking Lab! I can help you write queries, explain concepts, and optimize your SQL.' }
   ]);
   const [chatInput, setChatInput] = useState('');
+
+  // Block SQL State
+  const [draggedBlock, setDraggedBlock] = useState(null);
+  const [playgroundBlocks, setPlaygroundBlocks] = useState([]);
+
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const colors = THEMES[theme];
 
@@ -379,29 +572,20 @@ function App() {
     setResults(null);
   };
 
-  const handleFormatQuery = () => {
-    // Basic SQL formatting
-    const formatted = query
-      .replace(/\s+/g, ' ')
-      .replace(/SELECT/gi, 'SELECT\n  ')
-      .replace(/FROM/gi, '\nFROM\n  ')
-      .replace(/WHERE/gi, '\nWHERE\n  ')
-      .replace(/ORDER BY/gi, '\nORDER BY\n  ')
-      .replace(/GROUP BY/gi, '\nGROUP BY\n  ')
-      .replace(/LIMIT/gi, '\nLIMIT ')
-      .replace(/JOIN/gi, '\nJOIN\n  ')
-      .replace(/INNER JOIN/gi, '\nINNER JOIN\n  ')
-      .replace(/LEFT JOIN/gi, '\nLEFT JOIN\n  ')
-      .replace(/RIGHT JOIN/gi, '\nRIGHT JOIN\n  ')
-      .replace(/AND/gi, '\n  AND')
-      .replace(/OR/gi, '\n  OR')
-      .trim();
-    setQuery(formatted);
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setQuery('');
+    setResults(null);
+    setChatHistory([
+      { role: 'ai', content: 'Welcome to SQL Thinking Lab! I can help you write queries, explain concepts, and optimize your SQL.' }
+    ]);
   };
+
+
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    
+
     const newHistory = [
       ...chatHistory,
       { role: 'user', content: chatInput },
@@ -411,17 +595,42 @@ function App() {
     setChatInput('');
   };
 
+  // Drag and Drop Handlers
+  const handleDragStart = (e, block) => {
+    setDraggedBlock(block);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    if (draggedBlock) {
+      setPlaygroundBlocks([...playgroundBlocks, { ...draggedBlock, uid: Date.now() }]);
+      setDraggedBlock(null);
+    }
+  };
+
+  const removeBlock = (uid) => {
+    setPlaygroundBlocks(playgroundBlocks.filter(b => b.uid !== uid));
+  };
+
+
+
   // Show login/signup screen if not authenticated
   if (!isAuthenticated) {
     return isSignUpMode ? (
-      <SignUpScreen 
-        onSignUp={() => setIsSignUpMode(false)} 
+      <SignUpScreen
+        onSignUp={() => setIsSignUpMode(false)}
         theme={theme}
         onSwitchToLogin={() => setIsSignUpMode(false)}
       />
     ) : (
-      <LoginScreen 
-        onLogin={() => setIsAuthenticated(true)} 
+      <LoginScreen
+        onLogin={() => setIsAuthenticated(true)}
         theme={theme}
         onSwitchToSignUp={() => setIsSignUpMode(true)}
       />
@@ -430,10 +639,10 @@ function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden font-sans flex" style={{ backgroundColor: colors.bgTertiary, color: colors.text }}>
-      
+
       {/* Settings Modal */}
       {isSettingsOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setIsSettingsOpen(false)}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]" onClick={() => setIsSettingsOpen(false)}>
           <div className="w-96 rounded-lg shadow-2xl p-6" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold" style={{ color: colors.text }}>Settings</h2>
@@ -459,30 +668,56 @@ function App() {
         {/* COLUMN A: Schema Navigator */}
         <Panel defaultSize={15} minSize={10}>
           <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderRightColor: colors.border, borderRightWidth: '1px' }}>
-            <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-              <Database className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
-              <h2 className="font-semibold" style={{ color: colors.text }}>Database Schema</h2>
-            </div>
-            
-            <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
-              {Object.entries(MOCK_DATABASE).map(([tableName, tableData]) => (
-                <div key={tableName} className="space-y-2">
-                  <div className={`flex items-center gap-2 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`}>
-                    <Table className="w-4 h-4" />
-                    <span className="font-bold font-mono">{tableName}</span>
-                  </div>
-                  <div className="pl-6 space-y-1">
-                    {tableData.columns.map((col) => (
-                      <div key={col.name} className="flex items-center gap-2 text-xs font-mono" style={{ color: colors.textMuted }}>
-                        {col.isPrimary && <Key className="w-3 h-3 text-fuchsia-400" />}
-                        <span className={col.isPrimary ? 'text-fuchsia-300' : ''}>{col.name}</span>
-                        <span style={{ color: colors.textMuted, opacity: 0.6 }}>{col.type}</span>
-                      </div>
-                    ))}
-                  </div>
+            {/* Conditional Rendering: Database Schema OR Block Palette */}
+            {activeMode === 'normal' ? (
+              <>
+                <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                  <Database className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
+                  <h2 className="font-semibold" style={{ color: colors.text }}>Database Schema</h2>
                 </div>
-              ))}
-            </div>
+
+                <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
+                  {Object.entries(MOCK_DATABASE).map(([tableName, tableData]) => (
+                    <div key={tableName} className="space-y-2">
+                      <div className={`flex items-center gap-2 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`}>
+                        <Table className="w-4 h-4" />
+                        <span className="font-bold font-mono">{tableName}</span>
+                      </div>
+                      <div className="pl-6 space-y-1">
+                        {tableData.columns.map((col) => (
+                          <div key={col.name} className="flex items-center gap-2 text-xs font-mono" style={{ color: colors.textMuted }}>
+                            {col.isPrimary && <Key className="w-3 h-3 text-fuchsia-400" />}
+                            <span className={col.isPrimary ? 'text-fuchsia-300' : ''}>{col.name}</span>
+                            <span style={{ color: colors.textMuted, opacity: 0.6 }}>{col.type}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              /* Block Palette (Visible only in Block Mode) */
+              <div className="flex-1 overflow-auto scrollbar-thin p-4" style={{ backgroundColor: colors.bgSecondary }}>
+                {['DDL', 'DML'].map(category => (
+                  <div key={category} className="mb-6 last:mb-0">
+                    <div className={`px-4 py-2 mb-2 rounded border font-bold text-xs uppercase tracking-widest text-center ${category === 'DML' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'}`}>
+                      {category}
+                    </div>
+                    <div className="space-y-1">
+                      {BLOCKS.filter(b => b.category === category).map((block) => (
+                        <DraggableBlock
+                          key={block.id}
+                          block={block}
+                          onDragStart={handleDragStart}
+                          isPaletteItem={true}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </Panel>
 
@@ -495,7 +730,7 @@ function App() {
             <Panel defaultSize={60} minSize={30}>
               <div className="h-full flex flex-col" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
                 {/* Toolbar */}
-                <div className="px-4 py-2 backdrop-blur-sm flex items-center gap-3 relative" style={{ backgroundColor: colors.bgSecondary, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                <div className="px-4 py-2 backdrop-blur-sm flex items-center gap-3 relative z-50" style={{ backgroundColor: colors.bgSecondary, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
                   {/* Theme Toggle */}
                   <button
                     onClick={toggleTheme}
@@ -512,7 +747,7 @@ function App() {
                   </button>
 
                   {/* Menu Dropdown */}
-                  <div className="relative">
+                  <div className="relative" ref={menuRef}>
                     <button
                       onClick={() => setIsMenuOpen(!isMenuOpen)}
                       className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
@@ -521,10 +756,10 @@ function App() {
                       <Menu className="w-4 h-4" />
                       Menu
                     </button>
-                    
+
                     {isMenuOpen && (
                       <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
-                        <button 
+                        <button
                           onClick={() => { setIsSettingsOpen(true); setIsMenuOpen(false); }}
                           className="w-full px-4 py-3 flex items-center gap-3 hover:opacity-80 hover:bg-opacity-50 transition-all text-left text-sm"
                           style={{ color: colors.textSecondary }}
@@ -532,52 +767,113 @@ function App() {
                           <Settings className="w-4 h-4" />
                           <span>Settings</span>
                         </button>
-                        <button className="w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm" style={{ backgroundColor: 'rgba(88, 101, 242, 0.1)', color: colors.accent, borderLeftWidth: '2px', borderLeftColor: colors.accent }}>
+
+                        <div className="h-px w-full" style={{ backgroundColor: colors.border }}></div>
+
+                        <button
+                          onClick={() => { setActiveMode('normal'); setIsMenuOpen(false); }}
+                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${activeMode === 'normal' ? 'font-semibold' : ''}`}
+                          style={activeMode === 'normal' ? {
+                            backgroundColor: 'rgba(88, 101, 242, 0.1)',
+                            color: colors.accent,
+                            borderLeftWidth: '2px',
+                            borderLeftColor: colors.accent
+                          } : {
+                            color: colors.textSecondary
+                          }}
+                        >
                           <FileCode className="w-4 h-4" />
-                          <span className="font-semibold">Normal SQL</span>
+                          <span>Normal SQL</span>
+                        </button>
+
+                        <button
+                          onClick={() => { setActiveMode('block'); setIsMenuOpen(false); }}
+                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${activeMode === 'block' ? 'font-semibold' : ''}`}
+                          style={activeMode === 'block' ? {
+                            backgroundColor: 'rgba(88, 101, 242, 0.1)',
+                            color: colors.accent,
+                            borderLeftWidth: '2px',
+                            borderLeftColor: colors.accent
+                          } : {
+                            color: colors.textSecondary
+                          }}
+                        >
+                          <Box className="w-4 h-4" />
+                          <span>Block SQL</span>
                         </button>
                       </div>
                     )}
                   </div>
 
-                  <button
-                    onClick={handleRunQuery}
-                    disabled={isLoading}
-                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 hover:shadow-lg"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )}
-                    Run Query
-                  </button>
-                  <button 
-                    onClick={handleClearQuery}
-                    className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
-                    style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-                  >
-                    Clear
-                  </button>
-                  <button 
-                    onClick={handleFormatQuery}
-                    className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
-                    style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-                  >
-                    Format
-                  </button>
+                  <div className="flex items-center gap-2 ml-auto">
+                    <button
+                      onClick={handleRunQuery}
+                      disabled={isLoading}
+                      className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 hover:shadow-lg"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Play className="w-4 h-4" />
+                      )}
+                      Run Query
+                    </button>
+                    <button
+                      onClick={handleClearQuery}
+                      className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
+                      style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
-                
+
                 {/* Editor Area */}
                 <div className="flex-1 p-4 overflow-auto scrollbar-thin" style={{ backgroundColor: colors.bgTertiary }}>
                   <div className="h-full rounded-lg p-4" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
-                    <textarea
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
-                      placeholder="-- Write your SQL query here..."
-                      spellCheck={false}
-                    />
+                    {activeMode === 'block' ? (
+                      <div
+                        className="w-full h-full min-h-[300px] flex flex-col gap-2 p-8 transition-colors rounded-lg overflow-auto"
+                        style={{
+                          backgroundColor: theme === 'dark' ? '#202225' : '#f0f0f0',
+                          backgroundImage: `radial-gradient(${theme === 'dark' ? '#36393f' : '#e0e0e0'} 1px, transparent 1px)`,
+                          backgroundSize: '20px 20px'
+                        }}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                      >
+                        {playgroundBlocks.length === 0 ? (
+                          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40 pointer-events-none">
+                            <Box className="w-16 h-16 mb-4" />
+                            <p className="text-xl font-bold">Drag Blocks Here</p>
+                            <p className="text-sm">Build your query visually</p>
+                          </div>
+                        ) : (
+                          playgroundBlocks.map((block) => (
+                            <div key={block.uid} className="relative group">
+                              <DraggableBlock
+                                block={block}
+                                onDragStart={() => { }} // Disabled re-dragging for now to keep it simple
+                              />
+                              <button
+                                onClick={() => removeBlock(block.uid)}
+                                className="absolute -right-2 -top-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    ) : (
+                      <textarea
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
+                        placeholder="-- Write your SQL query here..."
+                        spellCheck={false}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -595,23 +891,22 @@ function App() {
                     AI Assistant
                   </h2>
                 </div>
-                
+
                 {/* Chat Body */}
                 <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-3">
                   {chatHistory.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] rounded-lg p-3 ${
-                        msg.role === 'user' 
-                          ? '' 
-                          : 'bg-orange-500/10 backdrop-blur-md border border-orange-500/20'
-                      }`} style={msg.role === 'user' ? { backgroundColor: colors.bgTertiary, color: colors.text } : { color: colors.text }}>
+                      <div className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user'
+                        ? ''
+                        : 'bg-orange-500/10 backdrop-blur-md border border-orange-500/20'
+                        }`} style={msg.role === 'user' ? { backgroundColor: colors.bgTertiary, color: colors.text } : { color: colors.text }}>
                         {msg.role === 'ai' && <Sparkles className="w-4 h-4 text-orange-400 inline mr-2" />}
                         <span className="text-sm">{msg.content}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Input Bar */}
                 <div className="p-4" style={{ borderTopColor: colors.border, borderTopWidth: '1px' }}>
                   <div className="flex gap-2">
@@ -627,7 +922,7 @@ function App() {
                     <button
                       onClick={handleSendMessage}
                       className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-2"
-                      >
+                    >
                       <Send className="w-4 h-4" />
                     </button>
                   </div>
@@ -648,13 +943,22 @@ function App() {
                 <Terminal className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
                 <h2 className="font-semibold" style={{ color: colors.text }}>Query Results</h2>
               </div>
-              {results && (
-                <span className={`px-2 py-1 ${theme === 'light' ? 'bg-cyan-600/10 text-cyan-600 border-cyan-600/20' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'} text-xs rounded-full border`}>
-                  {results.length} rows
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {results && (
+                  <span className={`px-2 py-1 ${theme === 'light' ? 'bg-cyan-600/10 text-cyan-600 border-cyan-600/20' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'} text-xs rounded-full border`}>
+                    {results.length} rows
+                  </span>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="p-1 rounded hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            
+
             {/* Results Table */}
             <div className="flex-1 overflow-auto scrollbar-thin">
               {isLoading ? (
