@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Database, Wand2, Terminal, ChevronRight, Key, Table, Loader2, Sparkles, Send, LogIn, Lock, User, Menu, Settings, FileCode, Box, Moon, Sun, X } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import BlockEditor from './BlockEditor';
 
 // Discord Color Themes
 const THEMES = {
@@ -80,8 +79,8 @@ function LoginScreen({ onLogin, theme, onSwitchToSignUp }) {
 
   return (
     <div className="h-screen w-full flex items-center justify-center p-4" style={{ backgroundColor: colors.bgTertiary }}>
-      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
-        style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
+      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500" 
+           style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/20">
@@ -168,7 +167,7 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
 
   const validateForm = () => {
     const newErrors = {};
-
+    
     if (!username.trim()) {
       newErrors.username = 'Username is required';
     } else if (username.length < 3) {
@@ -200,7 +199,7 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
     if (validateForm()) {
       // Show success message
       setSuccessMessage('Account created successfully! Redirecting to sign in...');
-
+      
       // Redirect to login after 2 seconds
       setTimeout(() => {
         onSignUp();
@@ -210,8 +209,8 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
 
   return (
     <div className="h-screen w-full flex items-center justify-center p-4" style={{ backgroundColor: colors.bgTertiary }}>
-      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
-        style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
+      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500" 
+           style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/20">
@@ -234,10 +233,10 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full border rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                style={{
-                  backgroundColor: colors.bgTertiary,
-                  borderColor: errors.username ? '#ef4444' : colors.border,
-                  color: colors.text
+                style={{ 
+                  backgroundColor: colors.bgTertiary, 
+                  borderColor: errors.username ? '#ef4444' : colors.border, 
+                  color: colors.text 
                 }}
                 placeholder="Choose a username"
               />
@@ -254,10 +253,10 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                style={{
-                  backgroundColor: colors.bgTertiary,
-                  borderColor: errors.email ? '#ef4444' : colors.border,
-                  color: colors.text
+                style={{ 
+                  backgroundColor: colors.bgTertiary, 
+                  borderColor: errors.email ? '#ef4444' : colors.border, 
+                  color: colors.text 
                 }}
                 placeholder="Enter your email"
               />
@@ -274,10 +273,10 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full border rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                style={{
-                  backgroundColor: colors.bgTertiary,
-                  borderColor: errors.password ? '#ef4444' : colors.border,
-                  color: colors.text
+                style={{ 
+                  backgroundColor: colors.bgTertiary, 
+                  borderColor: errors.password ? '#ef4444' : colors.border, 
+                  color: colors.text 
                 }}
                 placeholder="Create a password"
               />
@@ -294,10 +293,10 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full border rounded-lg pl-10 pr-4 py-3 outline-none focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
-                style={{
-                  backgroundColor: colors.bgTertiary,
-                  borderColor: errors.confirmPassword ? '#ef4444' : colors.border,
-                  color: colors.text
+                style={{ 
+                  backgroundColor: colors.bgTertiary, 
+                  borderColor: errors.confirmPassword ? '#ef4444' : colors.border, 
+                  color: colors.text 
                 }}
                 placeholder="Confirm your password"
               />
@@ -346,7 +345,6 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [viewMode, setViewMode] = useState('sql'); // 'sql' or 'block'
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -403,7 +401,7 @@ function App() {
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-
+    
     const newHistory = [
       ...chatHistory,
       { role: 'user', content: chatInput },
@@ -416,14 +414,14 @@ function App() {
   // Show login/signup screen if not authenticated
   if (!isAuthenticated) {
     return isSignUpMode ? (
-      <SignUpScreen
-        onSignUp={() => setIsSignUpMode(false)}
+      <SignUpScreen 
+        onSignUp={() => setIsSignUpMode(false)} 
         theme={theme}
         onSwitchToLogin={() => setIsSignUpMode(false)}
       />
     ) : (
-      <LoginScreen
-        onLogin={() => setIsAuthenticated(true)}
+      <LoginScreen 
+        onLogin={() => setIsAuthenticated(true)} 
         theme={theme}
         onSwitchToSignUp={() => setIsSignUpMode(true)}
       />
@@ -432,7 +430,7 @@ function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden font-sans flex" style={{ backgroundColor: colors.bgTertiary, color: colors.text }}>
-
+      
       {/* Settings Modal */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setIsSettingsOpen(false)}>
@@ -459,40 +457,36 @@ function App() {
 
       <PanelGroup direction="horizontal">
         {/* COLUMN A: Schema Navigator */}
-        {viewMode === 'sql' && (
-          <Panel defaultSize={15} minSize={10}>
-            <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderRightColor: colors.border, borderRightWidth: '1px' }}>
-              <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-                <Database className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
-                <h2 className="font-semibold" style={{ color: colors.text }}>Database Schema</h2>
-              </div>
-
-              <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
-                {Object.entries(MOCK_DATABASE).map(([tableName, tableData]) => (
-                  <div key={tableName} className="space-y-2">
-                    <div className={`flex items-center gap-2 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`}>
-                      <Table className="w-4 h-4" />
-                      <span className="font-bold font-mono">{tableName}</span>
-                    </div>
-                    <div className="pl-6 space-y-1">
-                      {tableData.columns.map((col) => (
-                        <div key={col.name} className="flex items-center gap-2 text-xs font-mono" style={{ color: colors.textMuted }}>
-                          {col.isPrimary && <Key className="w-3 h-3 text-fuchsia-400" />}
-                          <span className={col.isPrimary ? 'text-fuchsia-300' : ''}>{col.name}</span>
-                          <span style={{ color: colors.textMuted, opacity: 0.6 }}>{col.type}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <Panel defaultSize={15} minSize={10}>
+          <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderRightColor: colors.border, borderRightWidth: '1px' }}>
+            <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+              <Database className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
+              <h2 className="font-semibold" style={{ color: colors.text }}>Database Schema</h2>
             </div>
-          </Panel>
-        )}
+            
+            <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
+              {Object.entries(MOCK_DATABASE).map(([tableName, tableData]) => (
+                <div key={tableName} className="space-y-2">
+                  <div className={`flex items-center gap-2 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`}>
+                    <Table className="w-4 h-4" />
+                    <span className="font-bold font-mono">{tableName}</span>
+                  </div>
+                  <div className="pl-6 space-y-1">
+                    {tableData.columns.map((col) => (
+                      <div key={col.name} className="flex items-center gap-2 text-xs font-mono" style={{ color: colors.textMuted }}>
+                        {col.isPrimary && <Key className="w-3 h-3 text-fuchsia-400" />}
+                        <span className={col.isPrimary ? 'text-fuchsia-300' : ''}>{col.name}</span>
+                        <span style={{ color: colors.textMuted, opacity: 0.6 }}>{col.type}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Panel>
 
-        {viewMode === 'sql' && (
-          <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors cursor-col-resize" style={{ backgroundColor: colors.border }} />
-        )}
+        <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors cursor-col-resize" style={{ backgroundColor: colors.border }} />
 
         {/* COLUMN B: The Workbench */}
         <Panel defaultSize={55} minSize={30}>
@@ -501,8 +495,7 @@ function App() {
             <Panel defaultSize={60} minSize={30}>
               <div className="h-full flex flex-col" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
                 {/* Toolbar */}
-                {/* Toolbar - Added z-index to stay above Blockly */}
-                <div className="px-4 py-2 backdrop-blur-sm flex items-center gap-3 relative z-50" style={{ backgroundColor: colors.bgSecondary, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                <div className="px-4 py-2 backdrop-blur-sm flex items-center gap-3 relative" style={{ backgroundColor: colors.bgSecondary, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
                   {/* Theme Toggle */}
                   <button
                     onClick={toggleTheme}
@@ -528,10 +521,10 @@ function App() {
                       <Menu className="w-4 h-4" />
                       Menu
                     </button>
-
+                    
                     {isMenuOpen && (
-                      <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px', zIndex: 9999 }}>
-                        <button
+                      <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
+                        <button 
                           onClick={() => { setIsSettingsOpen(true); setIsMenuOpen(false); }}
                           className="w-full px-4 py-3 flex items-center gap-3 hover:opacity-80 hover:bg-opacity-50 transition-all text-left text-sm"
                           style={{ color: colors.textSecondary }}
@@ -539,19 +532,9 @@ function App() {
                           <Settings className="w-4 h-4" />
                           <span>Settings</span>
                         </button>
-                        <button
-                          onClick={() => { setViewMode('sql'); setIsMenuOpen(false); }}
-                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${viewMode === 'sql' ? 'bg-cyan-500/10 text-cyan-500 border-l-2 border-cyan-500' : 'text-gray-400 hover:bg-white/5'}`}
-                        >
+                        <button className="w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm" style={{ backgroundColor: 'rgba(88, 101, 242, 0.1)', color: colors.accent, borderLeftWidth: '2px', borderLeftColor: colors.accent }}>
                           <FileCode className="w-4 h-4" />
                           <span className="font-semibold">Normal SQL</span>
-                        </button>
-                        <button
-                          onClick={() => { setViewMode('block'); setIsMenuOpen(false); }}
-                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${viewMode === 'block' ? 'bg-cyan-500/10 text-cyan-500 border-l-2 border-cyan-500' : 'text-gray-400 hover:bg-white/5'}`}
-                        >
-                          <Box className="w-4 h-4" />
-                          <span className="font-semibold">Block SQL</span>
                         </button>
                       </div>
                     )}
@@ -569,14 +552,14 @@ function App() {
                     )}
                     Run Query
                   </button>
-                  <button
+                  <button 
                     onClick={handleClearQuery}
                     className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
                     style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
                   >
                     Clear
                   </button>
-                  <button
+                  <button 
                     onClick={handleFormatQuery}
                     className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
                     style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
@@ -584,21 +567,17 @@ function App() {
                     Format
                   </button>
                 </div>
-
+                
                 {/* Editor Area */}
-                <div className={`flex-1 overflow-auto scrollbar-thin ${viewMode === 'block' ? 'p-0' : 'p-4'}`} style={{ backgroundColor: colors.bgTertiary }}>
-                  <div className={`h-full ${viewMode === 'block' ? '' : 'rounded-lg p-4'} overflow-hidden`} style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: viewMode === 'block' ? '0' : '1px' }}>
-                    {viewMode === 'sql' ? (
-                      <textarea
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
-                        placeholder="-- Write your SQL query here..."
-                        spellCheck={false}
-                      />
-                    ) : (
-                      <BlockEditor onQueryChange={(newQuery) => setQuery(newQuery)} />
-                    )}
+                <div className="flex-1 p-4 overflow-auto scrollbar-thin" style={{ backgroundColor: colors.bgTertiary }}>
+                  <div className="h-full rounded-lg p-4" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
+                    <textarea
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
+                      placeholder="-- Write your SQL query here..."
+                      spellCheck={false}
+                    />
                   </div>
                 </div>
               </div>
@@ -616,22 +595,23 @@ function App() {
                     AI Assistant
                   </h2>
                 </div>
-
+                
                 {/* Chat Body */}
                 <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-3">
                   {chatHistory.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user'
-                        ? ''
-                        : 'bg-orange-500/10 backdrop-blur-md border border-orange-500/20'
-                        }`} style={msg.role === 'user' ? { backgroundColor: colors.bgTertiary, color: colors.text } : { color: colors.text }}>
+                      <div className={`max-w-[80%] rounded-lg p-3 ${
+                        msg.role === 'user' 
+                          ? '' 
+                          : 'bg-orange-500/10 backdrop-blur-md border border-orange-500/20'
+                      }`} style={msg.role === 'user' ? { backgroundColor: colors.bgTertiary, color: colors.text } : { color: colors.text }}>
                         {msg.role === 'ai' && <Sparkles className="w-4 h-4 text-orange-400 inline mr-2" />}
                         <span className="text-sm">{msg.content}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-
+                
                 {/* Input Bar */}
                 <div className="p-4" style={{ borderTopColor: colors.border, borderTopWidth: '1px' }}>
                   <div className="flex gap-2">
@@ -647,7 +627,7 @@ function App() {
                     <button
                       onClick={handleSendMessage}
                       className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-2"
-                    >
+                      >
                       <Send className="w-4 h-4" />
                     </button>
                   </div>
@@ -674,7 +654,7 @@ function App() {
                 </span>
               )}
             </div>
-
+            
             {/* Results Table */}
             <div className="flex-1 overflow-auto scrollbar-thin">
               {isLoading ? (
