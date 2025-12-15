@@ -79,8 +79,8 @@ function LoginScreen({ onLogin, theme }) {
 
   return (
     <div className="h-screen w-full flex items-center justify-center p-4" style={{ backgroundColor: colors.bgTertiary }}>
-      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500" 
-           style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
+      <div className="w-96 backdrop-blur-xl border rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+        style={{ backgroundColor: colors.bgSecondary + 'cc', borderColor: colors.border }}>
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/20">
@@ -142,10 +142,92 @@ function LoginScreen({ onLogin, theme }) {
   );
 }
 
+// Block Toolbox Component
+function BlockToolbox({ theme }) {
+  const colors = THEMES[theme];
+
+  const DDL_BLOCKS = [
+    { type: 'CREATE TABLE', label: 'CREATE TABLE', color: '#8b5cf6' },
+    { type: 'COLUMN', label: 'Column Definition', color: '#10b981' },
+    { type: 'ALTER TABLE', label: 'ALTER TABLE', color: '#8b5cf6' },
+    { type: 'DROP TABLE', label: 'DROP TABLE', color: '#ef4444' }
+  ];
+
+  const DML_BLOCKS = [
+    { type: 'INSERT', label: 'INSERT INTO', color: '#f59e0b' },
+    { type: 'UPDATE', label: 'UPDATE', color: '#f59e0b' },
+    { type: 'DELETE', label: 'DELETE FROM', color: '#ef4444' },
+    { type: 'SELECT', label: 'SELECT', color: '#3b82f6' }
+  ];
+
+  const RenderBlock = ({ block }) => (
+    <div
+      className="p-3 mb-2 rounded-lg cursor-grab active:cursor-grabbing hover:opacity-90 transition-opacity shadow-sm"
+      style={{ backgroundColor: block.color, color: '#ffffff' }}
+    >
+      <div className="font-bold text-xs uppercase opacity-75">{block.type}</div>
+      <div className="font-semibold text-sm">{block.label}</div>
+    </div>
+  );
+
+  return (
+    <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderRightColor: colors.border, borderRightWidth: '1px' }}>
+      <div className="px-4 py-3 border-b flex items-center gap-2" style={{ borderBottomColor: colors.border }}>
+        <Box className={`w-5 h-5 ${theme === 'light' ? 'text-purple-600' : 'text-purple-400'}`} />
+        <h2 className="font-semibold" style={{ color: colors.text }}>Block Toolbox</h2>
+      </div>
+
+      <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-6">
+        <div>
+          <h3 className="text-xs font-bold uppercase mb-3 px-1" style={{ color: colors.textMuted }}>DDL (Structure)</h3>
+          {DDL_BLOCKS.map((block, idx) => <RenderBlock key={idx} block={block} />)}
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold uppercase mb-3 px-1" style={{ color: colors.textMuted }}>DML (Data)</h3>
+          {DML_BLOCKS.map((block, idx) => <RenderBlock key={idx} block={block} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Block Canvas Component
+function BlockCanvas({ theme }) {
+  const colors = THEMES[theme];
+
+  return (
+    <div className="h-full w-full relative overflow-hidden"
+      style={{
+        backgroundColor: colors.bgTertiary,
+        backgroundImage: `radial-gradient(${colors.textMuted}33 1px, transparent 1px)`,
+        backgroundSize: '20px 20px'
+      }}>
+
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
+        <div className="px-3 py-1.5 rounded-md backdrop-blur-md bg-opacity-50 text-xs font-mono"
+          style={{ backgroundColor: colors.bg, color: colors.textMuted, borderColor: colors.border, borderWidth: '1px' }}>
+          Block Editor Canvas
+        </div>
+      </div>
+
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="text-center p-8 rounded-xl border-2 border-dashed"
+          style={{ borderColor: colors.border, color: colors.textMuted }}>
+          <Box className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Drag blocks from the toolbox here</p>
+          <p className="text-xs mt-1 opacity-70">Build your SQL queries visually</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isBlockMode, setIsBlockMode] = useState(false); // New State
   const [theme, setTheme] = useState('dark');
   const [isThemeHovered, setIsThemeHovered] = useState(false);
   const [query, setQuery] = useState('SELECT * FROM users WHERE status = "Active" LIMIT 10;');
@@ -199,7 +281,7 @@ function App() {
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
-    
+
     const newHistory = [
       ...chatHistory,
       { role: 'user', content: chatInput },
@@ -216,7 +298,7 @@ function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden font-sans flex" style={{ backgroundColor: colors.bgTertiary, color: colors.text }}>
-      
+
       {/* Settings Modal */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setIsSettingsOpen(false)}>
@@ -242,42 +324,46 @@ function App() {
       )}
 
       <PanelGroup direction="horizontal">
-        {/* COLUMN A: Schema Navigator */}
-        <Panel defaultSize={15} minSize={10}>
-          <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderRightColor: colors.border, borderRightWidth: '1px' }}>
-            <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-              <Database className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
-              <h2 className="font-semibold" style={{ color: colors.text }}>Database Schema</h2>
-            </div>
-            
-            <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
-              {Object.entries(MOCK_DATABASE).map(([tableName, tableData]) => (
-                <div key={tableName} className="space-y-2">
-                  <div className={`flex items-center gap-2 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`}>
-                    <Table className="w-4 h-4" />
-                    <span className="font-bold font-mono">{tableName}</span>
+        {/* COLUMN A: Schema Navigator or Block Toolbox */}
+        <Panel defaultSize={20} minSize={15} maxSize={30} id="sidebar">
+          {isBlockMode ? (
+            <BlockToolbox theme={theme} />
+          ) : (
+            <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderRightColor: colors.border, borderRightWidth: '1px' }}>
+              <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                <Database className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
+                <h2 className="font-semibold" style={{ color: colors.text }}>Database Schema</h2>
+              </div>
+
+              <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
+                {Object.entries(MOCK_DATABASE).map(([tableName, tableData]) => (
+                  <div key={tableName} className="space-y-2">
+                    <div className={`flex items-center gap-2 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`}>
+                      <Table className="w-4 h-4" />
+                      <span className="font-bold font-mono">{tableName}</span>
+                    </div>
+                    <div className="pl-6 space-y-1">
+                      {tableData.columns.map((col) => (
+                        <div key={col.name} className="flex items-center gap-2 text-xs font-mono" style={{ color: colors.textMuted }}>
+                          {col.isPrimary && <Key className="w-3 h-3 text-fuchsia-400" />}
+                          <span className={col.isPrimary ? 'text-fuchsia-300' : ''}>{col.name}</span>
+                          <span style={{ color: colors.textMuted, opacity: 0.6 }}>{col.type}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="pl-6 space-y-1">
-                    {tableData.columns.map((col) => (
-                      <div key={col.name} className="flex items-center gap-2 text-xs font-mono" style={{ color: colors.textMuted }}>
-                        {col.isPrimary && <Key className="w-3 h-3 text-fuchsia-400" />}
-                        <span className={col.isPrimary ? 'text-fuchsia-300' : ''}>{col.name}</span>
-                        <span style={{ color: colors.textMuted, opacity: 0.6 }}>{col.type}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </Panel>
 
-        <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors cursor-col-resize" style={{ backgroundColor: colors.border }} />
+        <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors cursor-col-resize z-50" style={{ backgroundColor: colors.border }} />
 
         {/* COLUMN B: The Workbench */}
-        <Panel defaultSize={55} minSize={30}>
+        <Panel defaultSize={50} minSize={30} id="workbench">
           <PanelGroup direction="vertical">
-            {/* Top: SQL Editor */}
+            {/* Top: SQL Editor or Block Canvas */}
             <Panel defaultSize={60} minSize={30}>
               <div className="h-full flex flex-col" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
                 {/* Toolbar */}
@@ -307,10 +393,10 @@ function App() {
                       <Menu className="w-4 h-4" />
                       Menu
                     </button>
-                    
+
                     {isMenuOpen && (
                       <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
-                        <button 
+                        <button
                           onClick={() => { setIsSettingsOpen(true); setIsMenuOpen(false); }}
                           className="w-full px-4 py-3 flex items-center gap-3 hover:opacity-80 hover:bg-opacity-50 transition-all text-left text-sm"
                           style={{ color: colors.textSecondary }}
@@ -318,9 +404,21 @@ function App() {
                           <Settings className="w-4 h-4" />
                           <span>Settings</span>
                         </button>
-                        <button className="w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm" style={{ backgroundColor: 'rgba(88, 101, 242, 0.1)', color: colors.accent, borderLeftWidth: '2px', borderLeftColor: colors.accent }}>
+                        <button
+                          onClick={() => { setIsBlockMode(false); setIsMenuOpen(false); }}
+                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${!isBlockMode ? 'bg-indigo-500/10 text-indigo-500 font-semibold' : ''}`}
+                          style={!isBlockMode ? { borderLeftWidth: '2px', borderLeftColor: colors.accent } : { color: colors.textSecondary }}
+                        >
                           <FileCode className="w-4 h-4" />
-                          <span className="font-semibold">Normal SQL</span>
+                          <span>Normal SQL</span>
+                        </button>
+                        <button
+                          onClick={() => { setIsBlockMode(true); setIsMenuOpen(false); }}
+                          className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${isBlockMode ? 'bg-indigo-500/10 text-indigo-500 font-semibold' : ''}`}
+                          style={isBlockMode ? { borderLeftWidth: '2px', borderLeftColor: colors.accent } : { color: colors.textSecondary }}
+                        >
+                          <Box className="w-4 h-4" />
+                          <span>Block SQL</span>
                         </button>
                       </div>
                     )}
@@ -329,7 +427,7 @@ function App() {
                   <button
                     onClick={handleRunQuery}
                     disabled={isLoading}
-                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 hover:shadow-lg"
+                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 hover:shadow-lg ml-auto"
                   >
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -338,33 +436,41 @@ function App() {
                     )}
                     Run Query
                   </button>
-                  <button 
+                  <button
                     onClick={handleClearQuery}
                     className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
                     style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
                   >
                     Clear
                   </button>
-                  <button 
-                    onClick={handleFormatQuery}
-                    className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
-                    style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-                  >
-                    Format
-                  </button>
+                  {!isBlockMode && (
+                    <button
+                      onClick={handleFormatQuery}
+                      className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
+                      style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                    >
+                      Format
+                    </button>
+                  )}
                 </div>
-                
+
                 {/* Editor Area */}
-                <div className="flex-1 p-4 overflow-auto scrollbar-thin" style={{ backgroundColor: colors.bgTertiary }}>
-                  <div className="h-full rounded-lg p-4" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
-                    <textarea
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
-                      placeholder="-- Write your SQL query here..."
-                      spellCheck={false}
-                    />
-                  </div>
+                <div className="flex-1 overflow-auto scrollbar-thin relative" style={{ backgroundColor: colors.bgTertiary }}>
+                  {isBlockMode ? (
+                    <BlockCanvas theme={theme} />
+                  ) : (
+                    <div className="h-full p-4">
+                      <div className="h-full rounded-lg p-4" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
+                        <textarea
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
+                          placeholder="-- Write your SQL query here..."
+                          spellCheck={false}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </Panel>
@@ -381,23 +487,22 @@ function App() {
                     AI Assistant
                   </h2>
                 </div>
-                
+
                 {/* Chat Body */}
                 <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-3">
                   {chatHistory.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] rounded-lg p-3 ${
-                        msg.role === 'user' 
-                          ? '' 
+                      <div className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user'
+                          ? ''
                           : 'bg-orange-500/10 backdrop-blur-md border border-orange-500/20'
-                      }`} style={msg.role === 'user' ? { backgroundColor: colors.bgTertiary, color: colors.text } : { color: colors.text }}>
+                        }`} style={msg.role === 'user' ? { backgroundColor: colors.bgTertiary, color: colors.text } : { color: colors.text }}>
                         {msg.role === 'ai' && <Sparkles className="w-4 h-4 text-orange-400 inline mr-2" />}
                         <span className="text-sm">{msg.content}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Input Bar */}
                 <div className="p-4" style={{ borderTopColor: colors.border, borderTopWidth: '1px' }}>
                   <div className="flex gap-2">
@@ -413,7 +518,7 @@ function App() {
                     <button
                       onClick={handleSendMessage}
                       className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition-all active:scale-95 flex items-center gap-2"
-                      >
+                    >
                       <Send className="w-4 h-4" />
                     </button>
                   </div>
@@ -423,10 +528,10 @@ function App() {
           </PanelGroup>
         </Panel>
 
-        <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors cursor-col-resize" style={{ backgroundColor: colors.border }} />
+        <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors cursor-col-resize z-50" style={{ backgroundColor: colors.border }} />
 
         {/* COLUMN C: Data Canvas */}
-        <Panel defaultSize={30} minSize={20}>
+        <Panel defaultSize={30} minSize={20} id="results">
           <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderLeftColor: colors.border, borderLeftWidth: '1px' }}>
             {/* Header */}
             <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
@@ -440,7 +545,7 @@ function App() {
                 </span>
               )}
             </div>
-            
+
             {/* Results Table */}
             <div className="flex-1 overflow-auto scrollbar-thin">
               {isLoading ? (
