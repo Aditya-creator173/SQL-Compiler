@@ -246,14 +246,14 @@ function App() {
         <Panel defaultSize={15} minSize={10}>
           <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderRightColor: colors.border, borderRightWidth: '1px' }}>
             <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-              <Database className="w-5 h-5 text-cyan-400" />
+              <Database className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
               <h2 className="font-semibold" style={{ color: colors.text }}>Database Schema</h2>
             </div>
             
             <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
               {Object.entries(MOCK_DATABASE).map(([tableName, tableData]) => (
                 <div key={tableName} className="space-y-2">
-                  <div className="flex items-center gap-2 text-cyan-400">
+                  <div className={`flex items-center gap-2 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`}>
                     <Table className="w-4 h-4" />
                     <span className="font-bold font-mono">{tableName}</span>
                   </div>
@@ -360,7 +360,7 @@ function App() {
                     <textarea
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      className="w-full h-full bg-transparent text-cyan-400 font-mono text-sm resize-none outline-none"
+                      className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
                       placeholder="-- Write your SQL query here..."
                       spellCheck={false}
                     />
@@ -431,11 +431,11 @@ function App() {
             {/* Header */}
             <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
               <div className="flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-cyan-400" />
+                <Terminal className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
                 <h2 className="font-semibold" style={{ color: colors.text }}>Query Results</h2>
               </div>
               {results && (
-                <span className="px-2 py-1 bg-cyan-500/10 text-cyan-400 text-xs rounded-full border border-cyan-500/20">
+                <span className={`px-2 py-1 ${theme === 'light' ? 'bg-cyan-600/10 text-cyan-600 border-cyan-600/20' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'} text-xs rounded-full border`}>
                   {results.length} rows
                 </span>
               )}
