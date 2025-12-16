@@ -28,6 +28,46 @@ const THEMES = {
   }
 };
 
+// Mock Database Schema
+const MOCK_DATABASE = {
+  users: {
+    columns: [
+      { name: 'id', type: 'INTEGER', isPrimary: true },
+      { name: 'email', type: 'VARCHAR(255)', isPrimary: false },
+      { name: 'username', type: 'VARCHAR(100)', isPrimary: false },
+      { name: 'created_at', type: 'TIMESTAMP', isPrimary: false },
+    ]
+  },
+  orders: {
+    columns: [
+      { name: 'id', type: 'INTEGER', isPrimary: true },
+      { name: 'user_id', type: 'INTEGER', isPrimary: false },
+      { name: 'total', type: 'DECIMAL(10,2)', isPrimary: false },
+      { name: 'status', type: 'VARCHAR(50)', isPrimary: false },
+      { name: 'order_date', type: 'TIMESTAMP', isPrimary: false },
+    ]
+  },
+  products: {
+    columns: [
+      { name: 'id', type: 'INTEGER', isPrimary: true },
+      { name: 'name', type: 'VARCHAR(200)', isPrimary: false },
+      { name: 'price', type: 'DECIMAL(10,2)', isPrimary: false },
+      { name: 'stock', type: 'INTEGER', isPrimary: false },
+    ]
+  }
+};
+
+// Mock Query Results
+const MOCK_RESULTS = [
+  { id: 1, email: 'test1@example.com', username: 'user1', created_at: '2024-01-15 10:30:00', status: 'Active' },
+  { id: 2, email: 'test2@example.com', username: 'user2', created_at: '2024-02-20 14:22:00', status: 'Active' },
+  { id: 3, email: 'test3@example.com', username: 'user3', created_at: '2024-03-10 09:15:00', status: 'Pending' },
+  { id: 4, email: 'test4@example.com', username: 'user4', created_at: '2024-04-05 16:45:00', status: 'Active' },
+  { id: 5, email: 'test5@example.com', username: 'user5', created_at: '2024-05-12 11:30:00', status: 'Inactive' },
+  { id: 5, email: 'test5@example.com', username: 'user5', created_at: '2024-05-12 11:30:00', status: 'Inactive' },
+];
+
+// Block Definitions
 // Block Definitions (Mapped to Blockly Types)
 const BLOCKS = [
   // DDL
@@ -93,21 +133,23 @@ const BLOCKS = [
 function DraggableBlock({ block, onDragStart, isPaletteItem = false, onInputChange }) {
   const isContainer = block.type === 'container';
 
-  // Base classes for both types
-  const baseClasses = `relative font-bold text-white shadow-sm cursor-grab active:cursor-grabbing text-lg select-none ${isPaletteItem ? 'mb-4 hover:scale-105 transition-transform' : ''}`;
+  // Base classes for both types - REDUCED SIZE and CONSTRAINED
+  // Use w-fit so it doesn't stretch. 
+  const containerClasses = isPaletteItem ? 'w-fit mx-0' : '';
+  const baseClasses = `relative font-bold text-white shadow-sm cursor-grab active:cursor-grabbing text-xs select-none ${isPaletteItem ? 'mb-2 hover:scale-105 transition-transform' : ''}`;
 
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, block)}
-      className={baseClasses}
+      className={`${baseClasses} ${containerClasses}`}
       style={{ zIndex: isPaletteItem ? 1 : 10 }}
     >
       {isContainer ? (
         // C-Block (Container) Rendering e.g., CREATE TABLE
         <div className="flex flex-col">
-          {/* Top Bar (Header) */}
-          <div className={`${block.color} px-4 py-3 rounded-t-lg rounded-br-lg flex items-center gap-3 min-w-[300px]`}>
+          {/* Top Bar (Header) - Scale down and fit content */}
+          <div className={`${block.color} px-2 py-1.5 rounded-t rounded-br flex items-center gap-2 overflow-hidden whitespace-nowrap`}>
             <span>{block.label}</span>
             {block.inputs && block.inputs.map((input, idx) => (
               <input
@@ -115,7 +157,8 @@ function DraggableBlock({ block, onDragStart, isPaletteItem = false, onInputChan
                 type="text"
                 placeholder={input.placeholder}
                 value={block.inputValues?.[input.id] || ''}
-                className="bg-white/20 border-none rounded px-2 py-1 text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[120px]"
+                readOnly={isPaletteItem}
+                className={`bg-white/20 border-none rounded px-1.5 py-0.5 text-xs text-white placeholder-white/50 focus:outline-none focus:ring-1 focus:ring-white/50 min-w-[40px] ${isPaletteItem ? 'cursor-grab pointer-events-none opacity-80' : ''}`}
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => onInputChange && onInputChange(block.uid, input.id, e.target.value)}
               />
@@ -124,40 +167,41 @@ function DraggableBlock({ block, onDragStart, isPaletteItem = false, onInputChan
 
           {/* Middle Section (The C-Shape interior / Slot) */}
           <div className="flex">
-            {/* The Spine */}
-            <div className={`${block.color} w-8 min-h-[40px] flex items-center justify-center`}>
-              <div className="w-1 h-3/4 bg-white/20 rounded-full"></div>
+            {/* The Spine - Thinner */}
+            <div className={`${block.color} w-3 min-h-[16px] flex items-center justify-center`}>
+              <div className="w-0.5 h-3/4 bg-white/20 rounded-full"></div>
             </div>
             {/* The Slot Area */}
-            <div className="flex-1 bg-black/10 min-h-[40px] rounded-l-lg m-1 inset-shadow flex items-center px-4 text-sm text-gray-400 border border-white/5 border-dashed">
-              <span className="opacity-50 tracking-wider font-mono">{block.innerLabel}</span>
+            <div className="flex-1 bg-black/10 min-h-[16px] rounded-l m-0.5 inset-shadow flex items-center px-2 text-[10px] text-gray-400 border border-white/5 border-dashed overflow-hidden">
+              <span className="opacity-50 tracking-wider font-mono scale-90 origin-left truncate">{block.innerLabel}</span>
             </div>
           </div>
 
           {/* Bottom Bar (Footer) */}
-          <div className={`${block.color} h-6 rounded-b-lg w-full flex items-center px-4`}>
-            <span className="text-[10px] text-white/50 uppercase tracking-widest">End Block</span>
+          <div className={`${block.color} h-3 rounded-b w-full flex items-center px-2`}>
+            {/* Removing text for cleaner look or making it tiny */}
           </div>
         </div>
       ) : (
-        // Simple Block Rendering e.g., COLUMN
+        // Simple Block Rendering e.g., COLUMN - Smaller
         <div
-          className={`${block.color} px-4 py-3 rounded-full flex items-center gap-3 min-w-[200px] shadow-lg`}
+          className={`${block.color} px-3 py-1.5 rounded-full flex items-center gap-2 shadow-md justify-start overflow-hidden whitespace-nowrap`}
           style={{
             clipPath: !isPaletteItem ? 'polygon(0% 0%, 15% 0%, 20% 5px, 30% 5px, 35% 0%, 100% 0%, 100% 100%, 35% 100%, 30% 95%, 20% 95%, 15% 100%, 0% 100%)' : 'none',
-            marginTop: !isPaletteItem ? '-5px' : '0',
-            marginBottom: !isPaletteItem ? '-5px' : '0'
+            marginTop: !isPaletteItem ? '-2px' : '0',
+            marginBottom: !isPaletteItem ? '-2px' : '0'
           }}
         >
           <span>{block.label}</span>
           {block.inputs && block.inputs.map((input, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              {input.preLabel && <span className="opacity-80 text-sm font-normal">{input.preLabel}</span>}
+            <div key={idx} className="flex items-center gap-1">
+              {input.preLabel && <span className="opacity-80 text-xs font-normal">{input.preLabel}</span>}
               <input
                 type="text"
                 placeholder={input.placeholder}
                 value={block.inputValues?.[input.id] || ''}
-                className="bg-white/20 border-none rounded px-2 py-1 text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[100px]"
+                readOnly={isPaletteItem}
+                className={`bg-white/20 border-none rounded px-1.5 py-0.5 text-xs text-white placeholder-white/50 focus:outline-none focus:ring-1 focus:ring-white/50 min-w-[30px] ${isPaletteItem ? 'cursor-grab pointer-events-none opacity-80' : ''}`}
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => onInputChange && onInputChange(block.uid, input.id, e.target.value)}
               />
@@ -485,11 +529,11 @@ function App() {
   const [user, setUser] = useState(null); // { username, dbName }
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [theme, setTheme] = useState('dark');
   const [activeMode, setActiveMode] = useState('normal'); // 'normal' | 'block'
   const [isThemeHovered, setIsThemeHovered] = useState(false);
   const [query, setQuery] = useState('SELECT * FROM users WHERE status = "Active" LIMIT 10;');
+  const [blockQuery, setBlockQuery] = useState('');
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([
@@ -497,6 +541,7 @@ function App() {
   ]);
   const [chatInput, setChatInput] = useState('');
 
+  // Block SQL State
   // Block SQL State
   const [draggedBlockType, setDraggedBlockType] = useState(null);
   const [blocklyWorkspace, setBlocklyWorkspace] = useState(null);
@@ -552,8 +597,10 @@ function App() {
   const handleRunQuery = async () => {
     setIsLoading(true);
     try {
-      // In block mode, query is automatically updated by BlockEditor's onQueryChange
-      if (!query.trim()) {
+      // Determine which query to use based on active mode
+      const queryToExecute = activeMode === 'block' ? blockQuery : query;
+      
+      if (!queryToExecute.trim()) {
         setResults([{ Error: 'No query to execute. Write SQL or add blocks.' }]);
         setIsLoading(false);
         return;
@@ -562,7 +609,7 @@ function App() {
       const response = await fetch('http://localhost:8080/api/sql/raw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sql: query, dbName: user?.dbName || 'new_project' })
+        body: JSON.stringify({ sql: queryToExecute, dbName: user?.dbName || 'new_project' })
       });
 
       if (response.ok) {
@@ -590,13 +637,22 @@ function App() {
   };
 
   const handleClearQuery = () => {
-    setQuery('');
+    if (activeMode === 'block') {
+      // Clear the Blockly workspace
+      if (blocklyWorkspace) {
+        blocklyWorkspace.clear();
+      }
+    } else {
+      // Clear the normal SQL editor
+      setQuery('');
+    }
     setResults(null);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     setQuery('');
+    setBlockQuery('');
     setResults(null);
     setChatHistory([
       { role: 'ai', content: 'Welcome to SQL Thinking Lab! I can help you write queries, explain concepts, and optimize your SQL.' }
@@ -643,10 +699,20 @@ function App() {
       const relativeY = e.clientY - injectionDiv.getBoundingClientRect().top;
 
       // 2. Adjust for workspace scroll and zoom
+      // The workspace coordinates are relative to the origin, which might be scrolled.
+      // Also need to account for scale.
       const metrics = blocklyWorkspace.getMetrics();
       const scale = blocklyWorkspace.scale;
 
       // Calculate workspace coordinates
+      // (pixels relative to div - scrollOffset) / scale
+      // Note: Blockly metrics.viewLeft is the scroll offset in workspace units usually, 
+      // but let's use the standard way if possible.
+      // Actually simpler: 
+      // var wsX = relativeX / scale + metrics.viewLeft;
+      // var wsY = relativeY / scale + metrics.viewTop;
+
+      // Let's rely on common math for this:
       const x = (relativeX / scale) + metrics.viewLeft;
       const y = (relativeY / scale) + metrics.viewTop;
 
@@ -678,29 +744,6 @@ function App() {
   return (
     <div className="h-screen w-screen overflow-hidden font-sans flex" style={{ backgroundColor: colors.bgTertiary, color: colors.text }}>
 
-      {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]" onClick={() => setIsSettingsOpen(false)}>
-          <div className="w-96 rounded-lg shadow-2xl p-6" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold" style={{ color: colors.text }}>Settings</h2>
-              <button onClick={() => setIsSettingsOpen(false)} className="p-1 rounded hover:opacity-70 hover:scale-125 transition-all hover:bg-opacity-10" style={{ backgroundColor: colors.bgSecondary }}>
-                <X className="w-5 h-5" style={{ color: colors.textMuted }} />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold mb-2" style={{ color: colors.textSecondary }}>Appearance</h3>
-                <p className="text-sm mb-2" style={{ color: colors.textMuted }}>Use the moon/sun button in the top-right to toggle between light and dark modes.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2" style={{ color: colors.textSecondary }}>Editor</h3>
-                <p className="text-sm" style={{ color: colors.textMuted }}>Drag the dividers to resize panels to your preference.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <PanelGroup direction="horizontal">
         {/* COLUMN A: Schema Navigator */}
@@ -809,17 +852,6 @@ function App() {
                     {isMenuOpen && (
                       <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
                         <button
-                          onClick={() => { setIsSettingsOpen(true); setIsMenuOpen(false); }}
-                          className="w-full px-4 py-3 flex items-center gap-3 hover:opacity-80 hover:bg-opacity-50 transition-all text-left text-sm"
-                          style={{ color: colors.textSecondary }}
-                        >
-                          <Settings className="w-4 h-4" />
-                          <span>Settings</span>
-                        </button>
-
-                        <div className="h-px w-full" style={{ backgroundColor: colors.border }}></div>
-
-                        <button
                           onClick={() => { setActiveMode('normal'); setIsMenuOpen(false); }}
                           className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${activeMode === 'normal' ? 'font-semibold' : ''}`}
                           style={activeMode === 'normal' ? {
@@ -880,25 +912,24 @@ function App() {
                 {/* Editor Area */}
                 <div className="flex-1 p-4 overflow-auto scrollbar-thin" style={{ backgroundColor: colors.bgTertiary }}>
                   <div className="h-full rounded-lg p-4" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
-                    {activeMode === 'block' ? (
-                      <div className="w-full h-full overflow-hidden rounded-lg"
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                      >
-                        <BlockEditor
-                          onQueryChange={setQuery}
-                          onInit={setBlocklyWorkspace}
-                        />
-                      </div>
-                    ) : (
-                      <textarea
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
-                        placeholder="-- Write your SQL query here..."
-                        spellCheck={false}
+                    <div className="w-full h-full overflow-hidden rounded-lg"
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      style={{ display: activeMode === 'block' ? 'flex' : 'none' }}
+                    >
+                      <BlockEditor
+                        onQueryChange={setBlockQuery}
+                        onInit={setBlocklyWorkspace}
                       />
-                    )}
+                    </div>
+                    <textarea
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
+                      placeholder="-- Write your SQL query here..."
+                      spellCheck={false}
+                      style={{ display: activeMode === 'normal' ? 'block' : 'none' }}
+                    />
                   </div>
                 </div>
               </div>
@@ -976,10 +1007,11 @@ function App() {
                 )}
                 <button
                   onClick={handleLogout}
-                  className="p-1 rounded hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                  className="px-3 py-1 rounded hover:bg-red-500/10 hover:text-red-500 transition-colors flex items-center gap-2"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
                 </button>
               </div>
             </div>
