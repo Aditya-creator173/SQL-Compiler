@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import BlockEditor from './BlockEditor';
+import * as Blockly from 'blockly/core';
 import { Play, Database, Wand2, Terminal, ChevronRight, Key, Table, Loader2, Sparkles, Send, LogIn, LogOut, Lock, User, Menu, Settings, FileCode, Box, Moon, Sun, X } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
@@ -66,10 +68,11 @@ const MOCK_RESULTS = [
 ];
 
 // Block Definitions
+// Block Definitions (Mapped to Blockly Types)
 const BLOCKS = [
   // DDL
   {
-    id: 'create_table',
+    id: 'sql_create_table',
     label: 'CREATE TABLE',
     type: 'container',
     category: 'DDL',
@@ -80,7 +83,7 @@ const BLOCKS = [
     innerLabel: 'COLUMNS'
   },
   {
-    id: 'column',
+    id: 'sql_column',
     label: 'Column',
     type: 'simple',
     category: 'DDL',
@@ -92,51 +95,29 @@ const BLOCKS = [
   },
   // DML
   {
-    id: 'insert',
+    id: 'sql_insert',
     label: 'INSERT INTO',
     type: 'container',
     category: 'DML',
     color: 'bg-blue-600',
     inputs: [
-      { id: 'table_name', placeholder: 'table', type: 'text' }
+      { id: 'table', placeholder: 'table', type: 'text' }
     ],
     innerLabel: 'VALUES'
   },
   {
-    id: 'value_row',
-    label: 'Row Value',
-    type: 'simple',
-    category: 'DML',
-    color: 'bg-sky-500',
-    inputs: [
-      { id: 'val1', placeholder: 'value1', type: 'text' },
-      { id: 'val2', placeholder: 'value2', type: 'text' }
-    ]
-  },
-  {
-    id: 'update',
+    id: 'sql_update',
     label: 'UPDATE',
     type: 'container',
     category: 'DML',
     color: 'bg-violet-600',
     inputs: [
-      { id: 'table_name', placeholder: 'table', type: 'text' }
+      { id: 'table', placeholder: 'table', type: 'text' }
     ],
     innerLabel: 'SET'
   },
   {
-    id: 'set_assign',
-    label: 'Set',
-    type: 'simple',
-    category: 'DML',
-    color: 'bg-fuchsia-500',
-    inputs: [
-      { id: 'col', placeholder: 'col', type: 'text' },
-      { id: 'val', placeholder: 'val', type: 'text', preLabel: '=' }
-    ]
-  },
-  {
-    id: 'delete',
+    id: 'sql_delete',
     label: 'DELETE FROM',
     type: 'container',
     category: 'DML',
@@ -145,18 +126,6 @@ const BLOCKS = [
       { id: 'table', placeholder: 'table', type: 'text' }
     ],
     innerLabel: 'WHERE'
-  },
-  {
-    id: 'condition',
-    label: 'Condition',
-    type: 'simple',
-    category: 'DML',
-    color: 'bg-orange-500',
-    inputs: [
-      { id: 'col', placeholder: 'col', type: 'text' },
-      { id: 'op', placeholder: '=', type: 'text' },
-      { id: 'val', placeholder: 'val', type: 'text' }
-    ]
   }
 ];
 
@@ -164,28 +133,31 @@ const BLOCKS = [
 function DraggableBlock({ block, onDragStart, isPaletteItem = false }) {
   const isContainer = block.type === 'container';
 
-  // Base classes for both types
-  const baseClasses = `relative font-bold text-white shadow-sm cursor-grab active:cursor-grabbing text-lg select-none ${isPaletteItem ? 'mb-4 hover:scale-105 transition-transform' : ''}`;
+  // Base classes for both types - REDUCED SIZE and CONSTRAINED
+  // Use w-fit so it doesn't stretch. 
+  const containerClasses = isPaletteItem ? 'w-fit mx-0' : '';
+  const baseClasses = `relative font-bold text-white shadow-sm cursor-grab active:cursor-grabbing text-xs select-none ${isPaletteItem ? 'mb-2 hover:scale-105 transition-transform' : ''}`;
 
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, block)}
-      className={baseClasses}
+      className={`${baseClasses} ${containerClasses}`}
       style={{ zIndex: isPaletteItem ? 1 : 10 }}
     >
       {isContainer ? (
         // C-Block (Container) Rendering e.g., CREATE TABLE
         <div className="flex flex-col">
-          {/* Top Bar (Header) */}
-          <div className={`${block.color} px-4 py-3 rounded-t-lg rounded-br-lg flex items-center gap-3 min-w-[300px]`}>
+          {/* Top Bar (Header) - Scale down and fit content */}
+          <div className={`${block.color} px-2 py-1.5 rounded-t rounded-br flex items-center gap-2 overflow-hidden whitespace-nowrap`}>
             <span>{block.label}</span>
             {block.inputs && block.inputs.map((input, idx) => (
               <input
                 key={idx}
                 type="text"
                 placeholder={input.placeholder}
-                className="bg-white/20 border-none rounded px-2 py-1 text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[120px]"
+                readOnly={isPaletteItem}
+                className={`bg-white/20 border-none rounded px-1.5 py-0.5 text-xs text-white placeholder-white/50 focus:outline-none focus:ring-1 focus:ring-white/50 min-w-[40px] ${isPaletteItem ? 'cursor-grab pointer-events-none opacity-80' : ''}`}
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => { }}
               />
@@ -194,39 +166,40 @@ function DraggableBlock({ block, onDragStart, isPaletteItem = false }) {
 
           {/* Middle Section (The C-Shape interior / Slot) */}
           <div className="flex">
-            {/* The Spine */}
-            <div className={`${block.color} w-8 min-h-[40px] flex items-center justify-center`}>
-              <div className="w-1 h-3/4 bg-white/20 rounded-full"></div>
+            {/* The Spine - Thinner */}
+            <div className={`${block.color} w-3 min-h-[16px] flex items-center justify-center`}>
+              <div className="w-0.5 h-3/4 bg-white/20 rounded-full"></div>
             </div>
             {/* The Slot Area */}
-            <div className="flex-1 bg-black/10 min-h-[40px] rounded-l-lg m-1 inset-shadow flex items-center px-4 text-sm text-gray-400 border border-white/5 border-dashed">
-              <span className="opacity-50 tracking-wider font-mono">{block.innerLabel}</span>
+            <div className="flex-1 bg-black/10 min-h-[16px] rounded-l m-0.5 inset-shadow flex items-center px-2 text-[10px] text-gray-400 border border-white/5 border-dashed overflow-hidden">
+              <span className="opacity-50 tracking-wider font-mono scale-90 origin-left truncate">{block.innerLabel}</span>
             </div>
           </div>
 
           {/* Bottom Bar (Footer) */}
-          <div className={`${block.color} h-6 rounded-b-lg w-full flex items-center px-4`}>
-            <span className="text-[10px] text-white/50 uppercase tracking-widest">End Block</span>
+          <div className={`${block.color} h-3 rounded-b w-full flex items-center px-2`}>
+            {/* Removing text for cleaner look or making it tiny */}
           </div>
         </div>
       ) : (
-        // Simple Block Rendering e.g., COLUMN
+        // Simple Block Rendering e.g., COLUMN - Smaller
         <div
-          className={`${block.color} px-4 py-3 rounded-full flex items-center gap-3 min-w-[200px] shadow-lg`}
+          className={`${block.color} px-3 py-1.5 rounded-full flex items-center gap-2 shadow-md justify-start overflow-hidden whitespace-nowrap`}
           style={{
             clipPath: !isPaletteItem ? 'polygon(0% 0%, 15% 0%, 20% 5px, 30% 5px, 35% 0%, 100% 0%, 100% 100%, 35% 100%, 30% 95%, 20% 95%, 15% 100%, 0% 100%)' : 'none',
-            marginTop: !isPaletteItem ? '-5px' : '0',
-            marginBottom: !isPaletteItem ? '-5px' : '0'
+            marginTop: !isPaletteItem ? '-2px' : '0',
+            marginBottom: !isPaletteItem ? '-2px' : '0'
           }}
         >
           <span>{block.label}</span>
           {block.inputs && block.inputs.map((input, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              {input.preLabel && <span className="opacity-80 text-sm font-normal">{input.preLabel}</span>}
+            <div key={idx} className="flex items-center gap-1">
+              {input.preLabel && <span className="opacity-80 text-xs font-normal">{input.preLabel}</span>}
               <input
                 type="text"
                 placeholder={input.placeholder}
-                className="bg-white/20 border-none rounded px-2 py-1 text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[100px]"
+                readOnly={isPaletteItem}
+                className={`bg-white/20 border-none rounded px-1.5 py-0.5 text-xs text-white placeholder-white/50 focus:outline-none focus:ring-1 focus:ring-white/50 min-w-[30px] ${isPaletteItem ? 'cursor-grab pointer-events-none opacity-80' : ''}`}
                 onClick={(e) => e.stopPropagation()}
                 onChange={(e) => { }}
               />
@@ -534,8 +507,9 @@ function App() {
   const [chatInput, setChatInput] = useState('');
 
   // Block SQL State
-  const [draggedBlock, setDraggedBlock] = useState(null);
-  const [playgroundBlocks, setPlaygroundBlocks] = useState([]);
+  // Block SQL State
+  const [draggedBlockType, setDraggedBlockType] = useState(null);
+  const [blocklyWorkspace, setBlocklyWorkspace] = useState(null);
 
   const menuRef = useRef(null);
 
@@ -597,7 +571,8 @@ function App() {
 
   // Drag and Drop Handlers
   const handleDragStart = (e, block) => {
-    setDraggedBlock(block);
+    // Store the ID which corresponds to the Blockly block type
+    setDraggedBlockType(block.id);
     e.dataTransfer.effectAllowed = 'copy';
   };
 
@@ -608,14 +583,39 @@ function App() {
 
   const handleDrop = (e) => {
     e.preventDefault();
-    if (draggedBlock) {
-      setPlaygroundBlocks([...playgroundBlocks, { ...draggedBlock, uid: Date.now() }]);
-      setDraggedBlock(null);
-    }
-  };
+    if (draggedBlockType && blocklyWorkspace) {
+      const newBlock = blocklyWorkspace.newBlock(draggedBlockType);
+      newBlock.initSvg();
+      newBlock.render();
 
-  const removeBlock = (uid) => {
-    setPlaygroundBlocks(playgroundBlocks.filter(b => b.uid !== uid));
+      // Coordinate Conversion Logic
+      // 1. Get Injection Div metrics
+      const injectionDiv = blocklyWorkspace.getInjectionDiv();
+      const relativeX = e.clientX - injectionDiv.getBoundingClientRect().left;
+      const relativeY = e.clientY - injectionDiv.getBoundingClientRect().top;
+
+      // 2. Adjust for workspace scroll and zoom
+      // The workspace coordinates are relative to the origin, which might be scrolled.
+      // Also need to account for scale.
+      const metrics = blocklyWorkspace.getMetrics();
+      const scale = blocklyWorkspace.scale;
+
+      // Calculate workspace coordinates
+      // (pixels relative to div - scrollOffset) / scale
+      // Note: Blockly metrics.viewLeft is the scroll offset in workspace units usually, 
+      // but let's use the standard way if possible.
+      // Actually simpler: 
+      // var wsX = relativeX / scale + metrics.viewLeft;
+      // var wsY = relativeY / scale + metrics.viewTop;
+
+      // Let's rely on common math for this:
+      const x = (relativeX / scale) + metrics.viewLeft;
+      const y = (relativeY / scale) + metrics.viewTop;
+
+      newBlock.moveBy(x, y);
+
+      setDraggedBlockType(null);
+    }
   };
 
 
@@ -832,38 +832,14 @@ function App() {
                 <div className="flex-1 p-4 overflow-auto scrollbar-thin" style={{ backgroundColor: colors.bgTertiary }}>
                   <div className="h-full rounded-lg p-4" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
                     {activeMode === 'block' ? (
-                      <div
-                        className="w-full h-full min-h-[300px] flex flex-col gap-2 p-8 transition-colors rounded-lg overflow-auto"
-                        style={{
-                          backgroundColor: theme === 'dark' ? '#202225' : '#f0f0f0',
-                          backgroundImage: `radial-gradient(${theme === 'dark' ? '#36393f' : '#e0e0e0'} 1px, transparent 1px)`,
-                          backgroundSize: '20px 20px'
-                        }}
+                      <div className="w-full h-full overflow-hidden rounded-lg"
                         onDragOver={handleDragOver}
                         onDrop={handleDrop}
                       >
-                        {playgroundBlocks.length === 0 ? (
-                          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40 pointer-events-none">
-                            <Box className="w-16 h-16 mb-4" />
-                            <p className="text-xl font-bold">Drag Blocks Here</p>
-                            <p className="text-sm">Build your query visually</p>
-                          </div>
-                        ) : (
-                          playgroundBlocks.map((block) => (
-                            <div key={block.uid} className="relative group">
-                              <DraggableBlock
-                                block={block}
-                                onDragStart={() => { }} // Disabled re-dragging for now to keep it simple
-                              />
-                              <button
-                                onClick={() => removeBlock(block.uid)}
-                                className="absolute -right-2 -top-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))
-                        )}
+                        <BlockEditor
+                          onQueryChange={setQuery}
+                          onInit={setBlocklyWorkspace}
+                        />
                       </div>
                     ) : (
                       <textarea
