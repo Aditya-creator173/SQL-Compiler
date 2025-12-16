@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import BlockEditor from './BlockEditor';
+import * as Blockly from 'blockly/core';
 import { Play, Database, Wand2, Terminal, ChevronRight, Key, Table, Loader2, Sparkles, Send, LogIn, LogOut, Lock, User, Menu, Settings, FileCode, Box, Moon, Sun, X } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
@@ -26,50 +28,11 @@ const THEMES = {
   }
 };
 
-// Mock Database Schema
-const MOCK_DATABASE = {
-  users: {
-    columns: [
-      { name: 'id', type: 'INTEGER', isPrimary: true },
-      { name: 'email', type: 'VARCHAR(255)', isPrimary: false },
-      { name: 'username', type: 'VARCHAR(100)', isPrimary: false },
-      { name: 'created_at', type: 'TIMESTAMP', isPrimary: false },
-    ]
-  },
-  orders: {
-    columns: [
-      { name: 'id', type: 'INTEGER', isPrimary: true },
-      { name: 'user_id', type: 'INTEGER', isPrimary: false },
-      { name: 'total', type: 'DECIMAL(10,2)', isPrimary: false },
-      { name: 'status', type: 'VARCHAR(50)', isPrimary: false },
-      { name: 'order_date', type: 'TIMESTAMP', isPrimary: false },
-    ]
-  },
-  products: {
-    columns: [
-      { name: 'id', type: 'INTEGER', isPrimary: true },
-      { name: 'name', type: 'VARCHAR(200)', isPrimary: false },
-      { name: 'price', type: 'DECIMAL(10,2)', isPrimary: false },
-      { name: 'stock', type: 'INTEGER', isPrimary: false },
-    ]
-  }
-};
-
-// Mock Query Results
-const MOCK_RESULTS = [
-  { id: 1, email: 'test1@example.com', username: 'user1', created_at: '2024-01-15 10:30:00', status: 'Active' },
-  { id: 2, email: 'test2@example.com', username: 'user2', created_at: '2024-02-20 14:22:00', status: 'Active' },
-  { id: 3, email: 'test3@example.com', username: 'user3', created_at: '2024-03-10 09:15:00', status: 'Pending' },
-  { id: 4, email: 'test4@example.com', username: 'user4', created_at: '2024-04-05 16:45:00', status: 'Active' },
-  { id: 5, email: 'test5@example.com', username: 'user5', created_at: '2024-05-12 11:30:00', status: 'Inactive' },
-  { id: 5, email: 'test5@example.com', username: 'user5', created_at: '2024-05-12 11:30:00', status: 'Inactive' },
-];
-
-// Block Definitions
+// Block Definitions (Mapped to Blockly Types)
 const BLOCKS = [
   // DDL
   {
-    id: 'create_table',
+    id: 'sql_create_table',
     label: 'CREATE TABLE',
     type: 'container',
     category: 'DDL',
@@ -80,7 +43,7 @@ const BLOCKS = [
     innerLabel: 'COLUMNS'
   },
   {
-    id: 'column',
+    id: 'sql_column',
     label: 'Column',
     type: 'simple',
     category: 'DDL',
@@ -92,51 +55,29 @@ const BLOCKS = [
   },
   // DML
   {
-    id: 'insert',
+    id: 'sql_insert',
     label: 'INSERT INTO',
     type: 'container',
     category: 'DML',
     color: 'bg-blue-600',
     inputs: [
-      { id: 'table_name', placeholder: 'table', type: 'text' }
+      { id: 'table', placeholder: 'table', type: 'text' }
     ],
     innerLabel: 'VALUES'
   },
   {
-    id: 'value_row',
-    label: 'Row Value',
-    type: 'simple',
-    category: 'DML',
-    color: 'bg-sky-500',
-    inputs: [
-      { id: 'val1', placeholder: 'value1', type: 'text' },
-      { id: 'val2', placeholder: 'value2', type: 'text' }
-    ]
-  },
-  {
-    id: 'update',
+    id: 'sql_update',
     label: 'UPDATE',
     type: 'container',
     category: 'DML',
     color: 'bg-violet-600',
     inputs: [
-      { id: 'table_name', placeholder: 'table', type: 'text' }
+      { id: 'table', placeholder: 'table', type: 'text' }
     ],
     innerLabel: 'SET'
   },
   {
-    id: 'set_assign',
-    label: 'Set',
-    type: 'simple',
-    category: 'DML',
-    color: 'bg-fuchsia-500',
-    inputs: [
-      { id: 'col', placeholder: 'col', type: 'text' },
-      { id: 'val', placeholder: 'val', type: 'text', preLabel: '=' }
-    ]
-  },
-  {
-    id: 'delete',
+    id: 'sql_delete',
     label: 'DELETE FROM',
     type: 'container',
     category: 'DML',
@@ -145,23 +86,11 @@ const BLOCKS = [
       { id: 'table', placeholder: 'table', type: 'text' }
     ],
     innerLabel: 'WHERE'
-  },
-  {
-    id: 'condition',
-    label: 'Condition',
-    type: 'simple',
-    category: 'DML',
-    color: 'bg-orange-500',
-    inputs: [
-      { id: 'col', placeholder: 'col', type: 'text' },
-      { id: 'op', placeholder: '=', type: 'text' },
-      { id: 'val', placeholder: 'val', type: 'text' }
-    ]
   }
 ];
 
 // Draggable Block Component
-function DraggableBlock({ block, onDragStart, isPaletteItem = false }) {
+function DraggableBlock({ block, onDragStart, isPaletteItem = false, onInputChange }) {
   const isContainer = block.type === 'container';
 
   // Base classes for both types
@@ -185,9 +114,10 @@ function DraggableBlock({ block, onDragStart, isPaletteItem = false }) {
                 key={idx}
                 type="text"
                 placeholder={input.placeholder}
+                value={block.inputValues?.[input.id] || ''}
                 className="bg-white/20 border-none rounded px-2 py-1 text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[120px]"
                 onClick={(e) => e.stopPropagation()}
-                onChange={(e) => { }}
+                onChange={(e) => onInputChange && onInputChange(block.uid, input.id, e.target.value)}
               />
             ))}
           </div>
@@ -226,9 +156,10 @@ function DraggableBlock({ block, onDragStart, isPaletteItem = false }) {
               <input
                 type="text"
                 placeholder={input.placeholder}
+                value={block.inputValues?.[input.id] || ''}
                 className="bg-white/20 border-none rounded px-2 py-1 text-base text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[100px]"
                 onClick={(e) => e.stopPropagation()}
-                onChange={(e) => { }}
+                onChange={(e) => onInputChange && onInputChange(block.uid, input.id, e.target.value)}
               />
             </div>
           ))}
@@ -244,10 +175,26 @@ function LoginScreen({ onLogin, theme, onSwitchToSignUp }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (username && password) {
-      onLogin();
+      try {
+        const response = await fetch('http://localhost:8080/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          onLogin(data);
+        } else {
+          alert('Login failed: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        // Backend not available - use mock login
+        console.log('Backend not available, using mock login');
+        onLogin({ username, dbName: username + '_db' });
+      }
     }
   };
 
@@ -368,16 +315,32 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSignUp = (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // Show success message
-      setSuccessMessage('Account created successfully! Redirecting to sign in...');
-
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        onSignUp();
-      }, 2000);
+      try {
+        const response = await fetch('http://localhost:8080/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setSuccessMessage('Account created successfully! Redirecting to sign in...');
+          setTimeout(() => {
+            onSignUp();
+          }, 2000);
+        } else {
+          setErrors({ ...errors, form: data.error || 'Registration failed' });
+        }
+      } catch (error) {
+        // Backend not available - proceed with mock signup
+        console.log('Backend not available, using mock signup');
+        setSuccessMessage('Account created successfully! Redirecting to sign in...');
+        setTimeout(() => {
+          onSignUp();
+        }, 2000);
+      }
     }
   };
 
@@ -519,6 +482,7 @@ function SignUpScreen({ onSignUp, theme, onSwitchToLogin }) {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null); // { username, dbName }
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -534,8 +498,12 @@ function App() {
   const [chatInput, setChatInput] = useState('');
 
   // Block SQL State
-  const [draggedBlock, setDraggedBlock] = useState(null);
-  const [playgroundBlocks, setPlaygroundBlocks] = useState([]);
+  const [draggedBlockType, setDraggedBlockType] = useState(null);
+  const [blocklyWorkspace, setBlocklyWorkspace] = useState(null);
+
+  // Dynamic Database Schema State
+  const [databaseSchema, setDatabaseSchema] = useState({});
+  const [schemaLoading, setSchemaLoading] = useState(false);
 
   const menuRef = useRef(null);
 
@@ -551,20 +519,74 @@ function App() {
     };
   }, []);
 
+  // Fetch schema when user logs in or after query execution
+  const fetchSchema = async () => {
+    if (!user?.dbName) return;
+    setSchemaLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8080/api/schema?dbName=${user.dbName}`);
+      if (response.ok) {
+        const schema = await response.json();
+        setDatabaseSchema(schema);
+      }
+    } catch (error) {
+      console.error('Failed to fetch schema:', error);
+    } finally {
+      setSchemaLoading(false);
+    }
+  };
+
+  // Fetch schema when user changes
+  useEffect(() => {
+    if (user?.dbName) {
+      fetchSchema();
+    }
+  }, [user?.dbName]);
+
   const colors = THEMES[theme];
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const handleRunQuery = () => {
+  const handleRunQuery = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setResults(MOCK_RESULTS);
+    try {
+      // In block mode, query is automatically updated by BlockEditor's onQueryChange
+      if (!query.trim()) {
+        setResults([{ Error: 'No query to execute. Write SQL or add blocks.' }]);
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:8080/api/sql/raw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sql: query, dbName: user?.dbName || 'new_project' })
+      });
+
+      if (response.ok) {
+        const json = await response.json();
+        // Handle update count (string) vs result set (array)
+        if (Array.isArray(json)) {
+          setResults(json);
+          console.log('✅ Query executed', json);
+        } else {
+          setResults([{ Result: json }]); // Wrap string message in object for table
+        }
+      } else {
+        const json = await response.json();
+        console.error('Query failed:', json.error);
+        setResults([{ Error: json.error || 'Query failed' }]);
+      }
+      // Refresh schema after query (might have created/modified tables)
+      fetchSchema();
+    } catch (error) {
+      console.error(error);
+      setResults([{ Error: 'Network Error' }]);
+    } finally {
       setIsLoading(false);
-      // Simulate toast notification
-      console.log('✅ Query executed in 12ms');
-    }, 800);
+    }
   };
 
   const handleClearQuery = () => {
@@ -597,7 +619,8 @@ function App() {
 
   // Drag and Drop Handlers
   const handleDragStart = (e, block) => {
-    setDraggedBlock(block);
+    // Store the ID which corresponds to the Blockly block type
+    setDraggedBlockType(block.id);
     e.dataTransfer.effectAllowed = 'copy';
   };
 
@@ -608,14 +631,29 @@ function App() {
 
   const handleDrop = (e) => {
     e.preventDefault();
-    if (draggedBlock) {
-      setPlaygroundBlocks([...playgroundBlocks, { ...draggedBlock, uid: Date.now() }]);
-      setDraggedBlock(null);
-    }
-  };
+    if (draggedBlockType && blocklyWorkspace) {
+      const newBlock = blocklyWorkspace.newBlock(draggedBlockType);
+      newBlock.initSvg();
+      newBlock.render();
 
-  const removeBlock = (uid) => {
-    setPlaygroundBlocks(playgroundBlocks.filter(b => b.uid !== uid));
+      // Coordinate Conversion Logic
+      // 1. Get Injection Div metrics
+      const injectionDiv = blocklyWorkspace.getInjectionDiv();
+      const relativeX = e.clientX - injectionDiv.getBoundingClientRect().left;
+      const relativeY = e.clientY - injectionDiv.getBoundingClientRect().top;
+
+      // 2. Adjust for workspace scroll and zoom
+      const metrics = blocklyWorkspace.getMetrics();
+      const scale = blocklyWorkspace.scale;
+
+      // Calculate workspace coordinates
+      const x = (relativeX / scale) + metrics.viewLeft;
+      const y = (relativeY / scale) + metrics.viewTop;
+
+      newBlock.moveBy(x, y);
+
+      setDraggedBlockType(null);
+    }
   };
 
 
@@ -630,7 +668,7 @@ function App() {
       />
     ) : (
       <LoginScreen
-        onLogin={() => setIsAuthenticated(true)}
+        onLogin={(userData) => { setIsAuthenticated(true); setUser(userData); }}
         theme={theme}
         onSwitchToSignUp={() => setIsSignUpMode(true)}
       />
@@ -677,23 +715,34 @@ function App() {
                 </div>
 
                 <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
-                  {Object.entries(MOCK_DATABASE).map(([tableName, tableData]) => (
-                    <div key={tableName} className="space-y-2">
-                      <div className={`flex items-center gap-2 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`}>
-                        <Table className="w-4 h-4" />
-                        <span className="font-bold font-mono">{tableName}</span>
-                      </div>
-                      <div className="pl-6 space-y-1">
-                        {tableData.columns.map((col) => (
-                          <div key={col.name} className="flex items-center gap-2 text-xs font-mono" style={{ color: colors.textMuted }}>
-                            {col.isPrimary && <Key className="w-3 h-3 text-fuchsia-400" />}
-                            <span className={col.isPrimary ? 'text-fuchsia-300' : ''}>{col.name}</span>
-                            <span style={{ color: colors.textMuted, opacity: 0.6 }}>{col.type}</span>
-                          </div>
-                        ))}
-                      </div>
+                  {schemaLoading ? (
+                    <div className="flex items-center gap-2 text-sm" style={{ color: colors.textMuted }}>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading schema...
                     </div>
-                  ))}
+                  ) : Object.keys(databaseSchema).length === 0 ? (
+                    <div className="text-sm" style={{ color: colors.textMuted }}>
+                      No tables yet. Create one with SQL!
+                    </div>
+                  ) : (
+                    Object.entries(databaseSchema).map(([tableName, tableData]) => (
+                      <div key={tableName} className="space-y-2">
+                        <div className={`flex items-center gap-2 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`}>
+                          <Table className="w-4 h-4" />
+                          <span className="font-bold font-mono">{tableName}</span>
+                        </div>
+                        <div className="pl-6 space-y-1">
+                          {tableData.columns.map((col) => (
+                            <div key={col.name} className="flex items-center gap-2 text-xs font-mono" style={{ color: colors.textMuted }}>
+                              {col.isPrimary && <Key className="w-3 h-3 text-fuchsia-400" />}
+                              <span className={col.isPrimary ? 'text-fuchsia-300' : ''}>{col.name}</span>
+                              <span style={{ color: colors.textMuted, opacity: 0.6 }}>{col.type}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </>
             ) : (
@@ -832,38 +881,14 @@ function App() {
                 <div className="flex-1 p-4 overflow-auto scrollbar-thin" style={{ backgroundColor: colors.bgTertiary }}>
                   <div className="h-full rounded-lg p-4" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
                     {activeMode === 'block' ? (
-                      <div
-                        className="w-full h-full min-h-[300px] flex flex-col gap-2 p-8 transition-colors rounded-lg overflow-auto"
-                        style={{
-                          backgroundColor: theme === 'dark' ? '#202225' : '#f0f0f0',
-                          backgroundImage: `radial-gradient(${theme === 'dark' ? '#36393f' : '#e0e0e0'} 1px, transparent 1px)`,
-                          backgroundSize: '20px 20px'
-                        }}
+                      <div className="w-full h-full overflow-hidden rounded-lg"
                         onDragOver={handleDragOver}
                         onDrop={handleDrop}
                       >
-                        {playgroundBlocks.length === 0 ? (
-                          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40 pointer-events-none">
-                            <Box className="w-16 h-16 mb-4" />
-                            <p className="text-xl font-bold">Drag Blocks Here</p>
-                            <p className="text-sm">Build your query visually</p>
-                          </div>
-                        ) : (
-                          playgroundBlocks.map((block) => (
-                            <div key={block.uid} className="relative group">
-                              <DraggableBlock
-                                block={block}
-                                onDragStart={() => { }} // Disabled re-dragging for now to keep it simple
-                              />
-                              <button
-                                onClick={() => removeBlock(block.uid)}
-                                className="absolute -right-2 -top-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))
-                        )}
+                        <BlockEditor
+                          onQueryChange={setQuery}
+                          onInit={setBlocklyWorkspace}
+                        />
                       </div>
                     ) : (
                       <textarea
@@ -999,7 +1024,7 @@ function App() {
           </div>
         </Panel>
       </PanelGroup>
-    </div>
+    </div >
   );
 }
 
