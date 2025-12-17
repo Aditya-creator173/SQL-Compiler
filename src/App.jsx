@@ -607,6 +607,11 @@ function App() {
   const [schemaLoading, setSchemaLoading] = useState(false);
 
   const menuRef = useRef(null);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -884,144 +889,210 @@ function App() {
 
           {/* COLUMN B: The Workbench */}
           <Panel defaultSize={55} minSize={30}>
-            <PanelGroup direction="vertical">
-              {/* Top: SQL Editor */}
-              <Panel defaultSize={60} minSize={30}>
-                <div className="h-full flex flex-col" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-                  {/* Toolbar */}
-                  <div className="px-4 py-2 backdrop-blur-sm flex items-center gap-3 relative z-50" style={{ backgroundColor: colors.bgSecondary, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-                    {/* Theme Toggle */}
-                    <button
-                      onClick={toggleTheme}
-                      onMouseEnter={() => setIsThemeHovered(true)}
-                      onMouseLeave={() => setIsThemeHovered(false)}
-                      className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
-                      style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-                    >
-                      {theme === 'dark' ? (
-                        isThemeHovered ? <Moon className="w-4 h-4 fill-current" /> : <Moon className="w-4 h-4" />
-                      ) : (
-                        <Sun className="w-4 h-4" />
-                      )}
-                    </button>
+            <div className="h-full flex flex-col" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+              {/* Toolbar */}
+              <div className="px-4 py-2 backdrop-blur-sm flex items-center gap-3 relative z-50" style={{ backgroundColor: colors.bgSecondary, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  onMouseEnter={() => setIsThemeHovered(true)}
+                  onMouseLeave={() => setIsThemeHovered(false)}
+                  className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
+                  style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                >
+                  {theme === 'dark' ? (
+                    isThemeHovered ? <Moon className="w-4 h-4 fill-current" /> : <Moon className="w-4 h-4" />
+                  ) : (
+                    <Sun className="w-4 h-4" />
+                  )}
+                </button>
 
-                    {/* Menu Dropdown */}
-                    <div className="relative" ref={menuRef}>
+                {/* Menu Dropdown */}
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
+                    style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                  >
+                    <Menu className="w-4 h-4" />
+                    Menu
+                  </button>
+
+                  {isMenuOpen && (
+                    <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
                       <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
-                        style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                        onClick={() => { setActiveMode('normal'); setIsMenuOpen(false); }}
+                        className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${activeMode === 'normal' ? 'font-semibold' : ''}`}
+                        style={activeMode === 'normal' ? {
+                          backgroundColor: 'rgba(88, 101, 242, 0.1)',
+                          color: colors.accent,
+                          borderLeftWidth: '2px',
+                          borderLeftColor: colors.accent
+                        } : {
+                          color: colors.textSecondary
+                        }}
                       >
-                        <Menu className="w-4 h-4" />
-                        Menu
+                        <FileCode className="w-4 h-4" />
+                        <span>Normal SQL</span>
                       </button>
 
-                      {isMenuOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
-                          <button
-                            onClick={() => { setActiveMode('normal'); setIsMenuOpen(false); }}
-                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${activeMode === 'normal' ? 'font-semibold' : ''}`}
-                            style={activeMode === 'normal' ? {
-                              backgroundColor: 'rgba(88, 101, 242, 0.1)',
-                              color: colors.accent,
-                              borderLeftWidth: '2px',
-                              borderLeftColor: colors.accent
-                            } : {
-                              color: colors.textSecondary
-                            }}
-                          >
-                            <FileCode className="w-4 h-4" />
-                            <span>Normal SQL</span>
-                          </button>
+                      <button
+                        onClick={() => { setActiveMode('block'); setIsMenuOpen(false); }}
+                        className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${activeMode === 'block' ? 'font-semibold' : ''}`}
+                        style={activeMode === 'block' ? {
+                          backgroundColor: 'rgba(88, 101, 242, 0.1)',
+                          color: colors.accent,
+                          borderLeftWidth: '2px',
+                          borderLeftColor: colors.accent
+                        } : {
+                          color: colors.textSecondary
+                        }}
+                      >
+                        <Box className="w-4 h-4" />
+                        <span>Block SQL</span>
+                      </button>
 
-                          <button
-                            onClick={() => { setActiveMode('block'); setIsMenuOpen(false); }}
-                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${activeMode === 'block' ? 'font-semibold' : ''}`}
-                            style={activeMode === 'block' ? {
-                              backgroundColor: 'rgba(88, 101, 242, 0.1)',
-                              color: colors.accent,
-                              borderLeftWidth: '2px',
-                              borderLeftColor: colors.accent
-                            } : {
-                              color: colors.textSecondary
-                            }}
-                          >
-                            <Box className="w-4 h-4" />
-                            <span>Block SQL</span>
-                          </button>
-
-                          <button
-                            onClick={() => { setActiveMode('text'); setIsMenuOpen(false); }}
-                            className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${activeMode === 'text' ? 'font-semibold' : ''}`}
-                            style={activeMode === 'text' ? {
-                              backgroundColor: 'rgba(88, 101, 242, 0.1)',
-                              color: colors.accent,
-                              borderLeftWidth: '2px',
-                              borderLeftColor: colors.accent
-                            } : {
-                              color: colors.textSecondary
-                            }}
-                          >
-                            <FileText className="w-4 h-4" />
-                            <span>Text SQL</span>
-                          </button>
-                        </div>
-                      )}
-
+                      <button
+                        onClick={() => { setActiveMode('text'); setIsMenuOpen(false); }}
+                        className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm ${activeMode === 'text' ? 'font-semibold' : ''}`}
+                        style={activeMode === 'text' ? {
+                          backgroundColor: 'rgba(88, 101, 242, 0.1)',
+                          color: colors.accent,
+                          borderLeftWidth: '2px',
+                          borderLeftColor: colors.accent
+                        } : {
+                          color: colors.textSecondary
+                        }}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Text SQL</span>
+                      </button>
                     </div>
+                  )}
 
-                    <div className="flex items-center gap-2 ml-auto">
+                </div>
+
+                <div className="flex items-center gap-2 ml-auto">
+                  <button
+                    onClick={handleRunQuery}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 hover:shadow-lg"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                    Run Query
+                  </button>
+                  <button
+                    onClick={handleClearQuery}
+                    className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
+                    style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              {/* Editor Area */}
+              <div className="flex-1 p-4 overflow-auto scrollbar-thin" style={{ backgroundColor: colors.bgTertiary }}>
+                <div className="h-full rounded-lg p-4" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
+                  <div className="w-full h-full overflow-hidden rounded-lg"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    style={{ display: activeMode === 'block' ? 'flex' : 'none' }}
+                  >
+                    <BlockEditor
+                      onQueryChange={setBlockQuery}
+                      onInit={setBlocklyWorkspace}
+                    />
+                  </div>
+                  <textarea
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
+                    placeholder="-- Write your SQL query here..."
+                    spellCheck={false}
+                    style={{ display: activeMode === 'normal' ? 'block' : 'none' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </Panel>
+
+          <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors cursor-col-resize" style={{ backgroundColor: colors.border }} />
+
+          {/* COLUMN C: Data Canvas */}
+          <Panel defaultSize={30} minSize={20}>
+            <PanelGroup direction="vertical">
+              <Panel defaultSize={60} minSize={30}>
+                <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderLeftColor: colors.border, borderLeftWidth: '1px' }}>
+                  {/* Header */}
+                  <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                    <div className="flex items-center gap-2">
+                      <Terminal className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
+                      <h2 className="font-semibold" style={{ color: colors.text }}>Query Results</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {results && (
+                        <span className={`px-2 py-1 ${theme === 'light' ? 'bg-cyan-600/10 text-cyan-600 border-cyan-600/20' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'} text-xs rounded-full border`}>
+                          {results.length} rows
+                        </span>
+                      )}
                       <button
-                        onClick={handleRunQuery}
-                        disabled={isLoading}
-                        className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 hover:shadow-lg"
+                        onClick={handleLogout}
+                        className="px-3 py-1 rounded hover:bg-red-500/10 hover:text-red-500 transition-colors flex items-center gap-2"
+                        title="Logout"
                       >
-                        {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Play className="w-4 h-4" />
-                        )}
-                        Run Query
-                      </button>
-                      <button
-                        onClick={handleClearQuery}
-                        className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
-                        style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-                      >
-                        Clear
+                        <LogOut className="w-4 h-4" />
+                        <span>Logout</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Editor Area */}
-                  <div className="flex-1 p-4 overflow-auto scrollbar-thin" style={{ backgroundColor: colors.bgTertiary }}>
-                    <div className="h-full rounded-lg p-4" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
-                      <div className="w-full h-full overflow-hidden rounded-lg"
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        style={{ display: activeMode === 'block' ? 'flex' : 'none' }}
-                      >
-                        <BlockEditor
-                          onQueryChange={setBlockQuery}
-                          onInit={setBlocklyWorkspace}
-                        />
+                  {/* Results Table */}
+                  <div className="flex-1 overflow-auto scrollbar-thin">
+                    {isLoading ? (
+                      <div className="h-full flex items-center justify-center">
+                        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
                       </div>
-                      <textarea
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        className={`w-full h-full bg-transparent font-mono text-sm resize-none outline-none ${theme === 'light' ? 'text-cyan-600 font-semibold' : 'text-cyan-400'}`}
-                        placeholder="-- Write your SQL query here..."
-                        spellCheck={false}
-                        style={{ display: activeMode === 'normal' ? 'block' : 'none' }}
-                      />
-                    </div>
+                    ) : results ? (
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0" style={{ backgroundColor: colors.bg, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                          <tr>
+                            {Object.keys(results[0]).map((key) => (
+                              <th key={key} className="px-4 py-3 text-left font-semibold font-mono text-xs uppercase tracking-wide" style={{ color: colors.text }}>
+                                {key}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="font-mono text-xs">
+                          {results.map((row, idx) => (
+                            <tr key={idx} className="hover:opacity-80 transition-colors" style={{ backgroundColor: idx % 2 === 0 ? 'transparent' : colors.bgTertiary + '40', borderBottomColor: colors.border + '40', borderBottomWidth: '1px' }}>
+                              {Object.values(row).map((value, colIdx) => (
+                                <td key={colIdx} className="px-4 py-3" style={{ color: colors.textSecondary }}>
+                                  {value}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                        <Terminal className="w-16 h-16 mb-4" style={{ color: colors.textMuted, opacity: 0.5 }} />
+                        <p className="font-semibold" style={{ color: colors.textMuted }}>Ready to Execute</p>
+                        <p className="text-sm mt-2" style={{ color: colors.textMuted, opacity: 0.7 }}>Run a query to see results here</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </Panel>
 
               <PanelResizeHandle className="h-1 hover:bg-cyan-500/50 transition-colors cursor-row-resize" style={{ backgroundColor: colors.border }} />
 
-              {/* Bottom: AI Copilot */}
               <Panel defaultSize={40} minSize={20}>
                 <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary }}>
                   {/* Header */}
@@ -1045,6 +1116,7 @@ function App() {
                         </div>
                       </div>
                     ))}
+                    <div ref={chatEndRef} />
                   </div>
 
                   {/* Input Bar */}
@@ -1070,74 +1142,6 @@ function App() {
                 </div>
               </Panel>
             </PanelGroup>
-          </Panel>
-
-          <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors cursor-col-resize" style={{ backgroundColor: colors.border }} />
-
-          {/* COLUMN C: Data Canvas */}
-          <Panel defaultSize={30} minSize={20}>
-            <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderLeftColor: colors.border, borderLeftWidth: '1px' }}>
-              {/* Header */}
-              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-                <div className="flex items-center gap-2">
-                  <Terminal className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
-                  <h2 className="font-semibold" style={{ color: colors.text }}>Query Results</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  {results && (
-                    <span className={`px-2 py-1 ${theme === 'light' ? 'bg-cyan-600/10 text-cyan-600 border-cyan-600/20' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'} text-xs rounded-full border`}>
-                      {results.length} rows
-                    </span>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="px-3 py-1 rounded hover:bg-red-500/10 hover:text-red-500 transition-colors flex items-center gap-2"
-                    title="Logout"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Results Table */}
-              <div className="flex-1 overflow-auto scrollbar-thin">
-                {isLoading ? (
-                  <div className="h-full flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                  </div>
-                ) : results ? (
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0" style={{ backgroundColor: colors.bg, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-                      <tr>
-                        {Object.keys(results[0]).map((key) => (
-                          <th key={key} className="px-4 py-3 text-left font-semibold font-mono text-xs uppercase tracking-wide" style={{ color: colors.text }}>
-                            {key}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="font-mono text-xs">
-                      {results.map((row, idx) => (
-                        <tr key={idx} className="hover:opacity-80 transition-colors" style={{ backgroundColor: idx % 2 === 0 ? 'transparent' : colors.bgTertiary + '40', borderBottomColor: colors.border + '40', borderBottomWidth: '1px' }}>
-                          {Object.values(row).map((value, colIdx) => (
-                            <td key={colIdx} className="px-4 py-3" style={{ color: colors.textSecondary }}>
-                              {value}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                    <Terminal className="w-16 h-16 mb-4" style={{ color: colors.textMuted, opacity: 0.5 }} />
-                    <p className="font-semibold" style={{ color: colors.textMuted }}>Ready to Execute</p>
-                    <p className="text-sm mt-2" style={{ color: colors.textMuted, opacity: 0.7 }}>Run a query to see results here</p>
-                  </div>
-                )}
-              </div>
-            </div>
           </Panel>
         </PanelGroup>
       )}

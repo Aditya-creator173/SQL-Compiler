@@ -23,6 +23,11 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
         { role: 'ai', content: 'Welcome to SQL Thinking Lab! I can help you write queries, explain concepts, and optimize your SQL.' }
     ]);
     const menuRef = useRef(null);
+    const chatEndRef = useRef(null);
+
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatHistory]);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -91,13 +96,13 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
     const handleRunQuery = async () => {
         const sql = generateSQL();
         if (!sql) {
-            setChatHistory(prev => [...prev, { role: 'ai', content: 'Please select an action and fill in the required fields first.' }]);
+            // setChatHistory(prev => [...prev, { role: 'ai', content: 'Please select an action and fill in the required fields first.' }]);
             return;
         }
 
         setGeneratedSQL(sql);
         setIsLoading(true);
-        setChatHistory(prev => [...prev, { role: 'ai', content: `Executing: ${sql}` }]);
+        // setChatHistory(prev => [...prev, { role: 'ai', content: `Executing: ${sql}` }]);
 
         try {
             const response = await fetch('http://localhost:8080/api/sql/raw', {
@@ -110,20 +115,20 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
                 const json = await response.json();
                 if (Array.isArray(json)) {
                     setResults(json);
-                    setChatHistory(prev => [...prev, { role: 'ai', content: `✅ Query executed successfully! ${json.length} row(s) returned.` }]);
+                    // setChatHistory(prev => [...prev, { role: 'ai', content: `✅ Query executed successfully! ${json.length} row(s) returned.` }]);
                 } else {
                     setResults([{ Result: json }]);
-                    setChatHistory(prev => [...prev, { role: 'ai', content: `✅ ${json}` }]);
+                    // setChatHistory(prev => [...prev, { role: 'ai', content: `✅ ${json}` }]);
                 }
             } else {
                 const json = await response.json();
                 setResults([{ Error: json.error || 'Query failed' }]);
-                setChatHistory(prev => [...prev, { role: 'ai', content: `❌ Error: ${json.error || 'Query failed'}` }]);
+                // setChatHistory(prev => [...prev, { role: 'ai', content: `❌ Error: ${json.error || 'Query failed'}` }]);
             }
         } catch (error) {
             console.error(error);
             setResults([{ Error: 'Network Error - Backend may not be running' }]);
-            setChatHistory(prev => [...prev, { role: 'ai', content: '❌ Network Error - Make sure the backend server is running on port 8080.' }]);
+            // setChatHistory(prev => [...prev, { role: 'ai', content: '❌ Network Error - Make sure the backend server is running on port 8080.' }]);
         } finally {
             setIsLoading(false);
         }
@@ -342,109 +347,181 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
 
                 {/* 2. MIDDLE PANE: Inputs + AI (55%) */}
                 <Panel defaultSize={55} minSize={30}>
-                    <PanelGroup direction="vertical">
-                        {/* 2a. Top: Toolbar & Inputs (60%) */}
-                        <Panel defaultSize={60} minSize={30}>
-                            <div className="h-full flex flex-col" style={{ backgroundColor: colors.bg }}>
-                                {/* Toolbar */}
-                                <div className="px-4 py-2 backdrop-blur-sm flex items-center gap-3 relative z-50 border-b" style={{ backgroundColor: colors.bgSecondary, borderColor: colors.border }}>
-                                    <button
-                                        onClick={onToggleTheme}
-                                        className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
-                                        style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-                                    >
-                                        {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                                    </button>
 
-                                    <div className="relative" ref={menuRef}>
+                    <div className="h-full flex flex-col" style={{ backgroundColor: colors.bg }}>
+                        {/* Toolbar */}
+                        <div className="px-4 py-2 backdrop-blur-sm flex items-center gap-3 relative z-50 border-b" style={{ backgroundColor: colors.bgSecondary, borderColor: colors.border }}>
+                            <button
+                                onClick={onToggleTheme}
+                                className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
+                                style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                            >
+                                {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                            </button>
+
+                            <div className="relative" ref={menuRef}>
+                                <button
+                                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                                    className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
+                                    style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                                >
+                                    <Menu className="w-4 h-4" />
+                                    Menu
+                                </button>
+
+                                {isMenuOpen && (
+                                    <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
                                         <button
-                                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                            className="px-3 py-2 rounded-lg transition-all active:scale-95 flex items-center gap-2 hover:opacity-80 hover:scale-110 hover:shadow-md"
-                                            style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                                            onClick={() => { onSwitchMode('normal'); setIsMenuOpen(false); }}
+                                            className="w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm"
+                                            style={{ color: colors.textSecondary }}
                                         >
-                                            <Menu className="w-4 h-4" />
-                                            Menu
+                                            <FileCode className="w-4 h-4" />
+                                            <span>Normal SQL</span>
                                         </button>
+                                        <button
+                                            onClick={() => { onSwitchMode('block'); setIsMenuOpen(false); }}
+                                            className="w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm"
+                                            style={{ color: colors.textSecondary }}
+                                        >
+                                            <Box className="w-4 h-4" />
+                                            <span>Block SQL</span>
+                                        </button>
+                                        <button
+                                            onClick={() => { onSwitchMode('text'); setIsMenuOpen(false); }}
+                                            className="w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm font-semibold"
+                                            style={{
+                                                backgroundColor: 'rgba(88, 101, 242, 0.1)',
+                                                color: colors.accent,
+                                                borderLeftWidth: '2px',
+                                                borderLeftColor: colors.accent
+                                            }}
+                                        >
+                                            <FileText className="w-4 h-4" />
+                                            <span>Text SQL</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
-                                        {isMenuOpen && (
-                                            <div className="absolute top-full left-0 mt-2 w-48 rounded-lg shadow-xl z-50 overflow-hidden" style={{ backgroundColor: colors.bg, borderColor: colors.border, borderWidth: '1px' }}>
-                                                <button
-                                                    onClick={() => { onSwitchMode('normal'); setIsMenuOpen(false); }}
-                                                    className="w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm"
-                                                    style={{ color: colors.textSecondary }}
-                                                >
-                                                    <FileCode className="w-4 h-4" />
-                                                    <span>Normal SQL</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => { onSwitchMode('block'); setIsMenuOpen(false); }}
-                                                    className="w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm"
-                                                    style={{ color: colors.textSecondary }}
-                                                >
-                                                    <Box className="w-4 h-4" />
-                                                    <span>Block SQL</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => { onSwitchMode('text'); setIsMenuOpen(false); }}
-                                                    className="w-full px-4 py-3 flex items-center gap-3 transition-colors text-left text-sm font-semibold"
-                                                    style={{
-                                                        backgroundColor: 'rgba(88, 101, 242, 0.1)',
-                                                        color: colors.accent,
-                                                        borderLeftWidth: '2px',
-                                                        borderLeftColor: colors.accent
-                                                    }}
-                                                >
-                                                    <FileText className="w-4 h-4" />
-                                                    <span>Text SQL</span>
-                                                </button>
-                                            </div>
-                                        )}
+                            {/* Generated SQL Preview */}
+                            {generatedSQL && (
+                                <div className="flex-1 mx-4 px-3 py-1 rounded bg-black/20 font-mono text-xs truncate" style={{ color: colors.textMuted }}>
+                                    {generatedSQL}
+                                </div>
+                            )}
+
+                            {/* Run and Clear Buttons */}
+                            <div className="flex items-center gap-2 ml-auto">
+                                <button
+                                    onClick={handleRunQuery}
+                                    disabled={isLoading}
+                                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 hover:shadow-lg"
+                                >
+                                    {isLoading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Play className="w-4 h-4" />
+                                    )}
+                                    Run Query
+                                </button>
+                                <button
+                                    onClick={handleClear}
+                                    className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
+                                    style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Form Area */}
+                        <div className="flex-1 p-8 overflow-y-auto">
+                            <div className="max-w-md mx-auto">
+                                <h2 className="text-2xl font-bold mb-6 pb-4 border-b" style={{ color: colors.text, borderColor: colors.border }}>Configuration</h2>
+                                {renderInputForm()}
+                            </div>
+                        </div>
+                    </div>
+                </Panel>
+
+
+
+                <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors" style={{ backgroundColor: colors.border }} />
+
+                {/* 3. RIGHT PANE: Results (30%) */}
+                <Panel defaultSize={30} minSize={20} style={{ backgroundColor: colors.bgSecondary }}>
+                    <PanelGroup direction="vertical">
+                        <Panel defaultSize={60} minSize={30}>
+                            <div className="h-full flex flex-col">
+                                {/* Header with Logout */}
+                                <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                                    <div className="flex items-center gap-2">
+                                        <Terminal className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
+                                        <h2 className="font-semibold" style={{ color: colors.text }}>Query Results</h2>
                                     </div>
 
-                                    {/* Generated SQL Preview */}
-                                    {generatedSQL && (
-                                        <div className="flex-1 mx-4 px-3 py-1 rounded bg-black/20 font-mono text-xs truncate" style={{ color: colors.textMuted }}>
-                                            {generatedSQL}
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {results && (
+                                            <span className={`px-2 py-1 ${theme === 'light' ? 'bg-cyan-600/10 text-cyan-600 border-cyan-600/20' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'} text-xs rounded-full border`}>
+                                                {results.length} rows
+                                            </span>
+                                        )}
+                                        <button
+                                            onClick={onLogout}
+                                            className="px-3 py-1 rounded hover:bg-red-500/10 hover:text-red-500 transition-colors flex items-center gap-2"
+                                            title="Logout"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            <span>Logout</span>
+                                        </button>
 
-                                    {/* Run and Clear Buttons */}
-                                    <div className="flex items-center gap-2 ml-auto">
-                                        <button
-                                            onClick={handleRunQuery}
-                                            disabled={isLoading}
-                                            className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 hover:shadow-lg"
-                                        >
-                                            {isLoading ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                <Play className="w-4 h-4" />
-                                            )}
-                                            Run Query
-                                        </button>
-                                        <button
-                                            onClick={handleClear}
-                                            className="px-3 py-2 rounded-lg transition-all active:scale-95 hover:opacity-80 hover:scale-110 hover:shadow-md"
-                                            style={{ backgroundColor: colors.bgTertiary, color: colors.textSecondary }}
-                                        >
-                                            Clear
-                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Form Area */}
-                                <div className="flex-1 p-8 overflow-y-auto">
-                                    <div className="max-w-md mx-auto">
-                                        <h2 className="text-2xl font-bold mb-6 pb-4 border-b" style={{ color: colors.text, borderColor: colors.border }}>Configuration</h2>
-                                        {renderInputForm()}
-                                    </div>
+                                {/* Results Table */}
+                                <div className="flex-1 overflow-auto scrollbar-thin">
+                                    {isLoading ? (
+                                        <div className="h-full flex items-center justify-center">
+                                            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                                        </div>
+                                    ) : results ? (
+                                        <table className="w-full text-sm">
+                                            <thead className="sticky top-0" style={{ backgroundColor: colors.bg, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                                                <tr>
+                                                    {Object.keys(results[0]).map((key) => (
+                                                        <th key={key} className="px-4 py-3 text-left font-semibold font-mono text-xs uppercase tracking-wide" style={{ color: colors.text }}>
+                                                            {key}
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="font-mono text-xs">
+                                                {results.map((row, idx) => (
+                                                    <tr key={idx} className="hover:opacity-80 transition-colors" style={{ backgroundColor: idx % 2 === 0 ? 'transparent' : colors.bgTertiary + '40', borderBottomColor: colors.border + '40', borderBottomWidth: '1px' }}>
+                                                        {Object.values(row).map((value, colIdx) => (
+                                                            <td key={colIdx} className="px-4 py-3" style={{ color: colors.textSecondary }}>
+                                                                {String(value)}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                            <Terminal className="w-16 h-16 mb-4" style={{ color: colors.textMuted, opacity: 0.5 }} />
+                                            <p className="font-semibold" style={{ color: colors.textMuted }}>Ready to Execute</p>
+                                            <p className="text-sm mt-2" style={{ color: colors.textMuted, opacity: 0.7 }}>Select an action and run a query to see results here</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </Panel>
 
                         <PanelResizeHandle className="h-1 hover:bg-orange-500/50 transition-colors" style={{ backgroundColor: colors.border }} />
 
-                        {/* 2b. Bottom: AI Assistant (40%) */}
+                        {/* Bottom: AI Assistant (40%) */}
                         <Panel defaultSize={40} minSize={20} style={{ backgroundColor: colors.bgSecondary }}>
                             <div className="h-full flex flex-col">
                                 <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
@@ -461,6 +538,7 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
                                             </div>
                                         </div>
                                     ))}
+                                    <div ref={chatEndRef} />
                                 </div>
                                 <div className="p-4" style={{ borderTopColor: colors.border, borderTopWidth: '1px' }}>
                                     <div className="flex gap-2">
@@ -485,77 +563,7 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
                         </Panel>
                     </PanelGroup>
                 </Panel>
-
-                <PanelResizeHandle className="w-1 hover:bg-cyan-500/50 transition-colors" style={{ backgroundColor: colors.border }} />
-
-                {/* 3. RIGHT PANE: Results (30%) */}
-                <Panel defaultSize={30} minSize={20} style={{ backgroundColor: colors.bgSecondary }}>
-                    <div className="h-full flex flex-col">
-                        {/* Header with Logout */}
-                        <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-                            <div className="flex items-center gap-2">
-                                <Terminal className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
-                                <h2 className="font-semibold" style={{ color: colors.text }}>Query Results</h2>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                {results && (
-                                    <span className={`px-2 py-1 ${theme === 'light' ? 'bg-cyan-600/10 text-cyan-600 border-cyan-600/20' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'} text-xs rounded-full border`}>
-                                        {results.length} rows
-                                    </span>
-                                )}
-                                <button
-                                    onClick={onLogout}
-                                    className="px-3 py-1 rounded hover:bg-red-500/10 hover:text-red-500 transition-colors flex items-center gap-2"
-                                    title="Logout"
-                                >
-                                    <LogOut className="w-4 h-4" />
-                                    <span>Logout</span>
-                                </button>
-
-                            </div>
-                        </div>
-
-                        {/* Results Table */}
-                        <div className="flex-1 overflow-auto scrollbar-thin">
-                            {isLoading ? (
-                                <div className="h-full flex items-center justify-center">
-                                    <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                                </div>
-                            ) : results ? (
-                                <table className="w-full text-sm">
-                                    <thead className="sticky top-0" style={{ backgroundColor: colors.bg, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
-                                        <tr>
-                                            {Object.keys(results[0]).map((key) => (
-                                                <th key={key} className="px-4 py-3 text-left font-semibold font-mono text-xs uppercase tracking-wide" style={{ color: colors.text }}>
-                                                    {key}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody className="font-mono text-xs">
-                                        {results.map((row, idx) => (
-                                            <tr key={idx} className="hover:opacity-80 transition-colors" style={{ backgroundColor: idx % 2 === 0 ? 'transparent' : colors.bgTertiary + '40', borderBottomColor: colors.border + '40', borderBottomWidth: '1px' }}>
-                                                {Object.values(row).map((value, colIdx) => (
-                                                    <td key={colIdx} className="px-4 py-3" style={{ color: colors.textSecondary }}>
-                                                        {String(value)}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                                    <Terminal className="w-16 h-16 mb-4" style={{ color: colors.textMuted, opacity: 0.5 }} />
-                                    <p className="font-semibold" style={{ color: colors.textMuted }}>Ready to Execute</p>
-                                    <p className="text-sm mt-2" style={{ color: colors.textMuted, opacity: 0.7 }}>Select an action and run a query to see results here</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </Panel>
-            </PanelGroup>
-        </div>
+            </PanelGroup >
+        </div >
     );
 }
