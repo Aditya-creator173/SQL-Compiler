@@ -1,3 +1,4 @@
+database\CorsConfig.class
 database\SchemaController.class
 database\AuthService.class
 database\SqlController.class

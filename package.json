@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "blockly": "^12.3.1",
+    "face-api.js": "^0.22.2",
     "lucide-react": "^0.294.0",
+    "postprocessing": "^6.38.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resizable-panels": "^3.0.6",

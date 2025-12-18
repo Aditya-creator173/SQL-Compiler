@@ -1,0 +1,25 @@
+{
+  "name": "sql-learning-lab-front-page",
+  "version": "1.0.0",
+  "description": "Extracted front page (login/signup) components from SQL Learning Lab",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.294.0",
+    "three": "^0.182.0",
+    "postprocessing": "^6.38.1",
+    "face-api.js": "^0.20.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^7.3.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}
