@@ -31,149 +31,501 @@ const DiscordDarkTheme = Blockly.Theme.defineTheme('discord_dark', {
 // Initialize Blockly with English
 Blockly.setLocale(En);
 
-// --- Custom Block Definitions ---
+// =====================================================
+// BLOCK DEFINITIONS - Wells and Hills Connector System
+// =====================================================
 
-// 1. Create Table Block (Indigo-500: #6366f1)
+// -----------------------------------------------
+// 1. CREATE TABLE Block (Purple #9B59B6)
+// Has a WELL (dip) that accepts COLUMN blocks
+// -----------------------------------------------
 Blockly.Blocks['sql_create_table'] = {
     init: function () {
         this.appendDummyInput()
             .appendField("CREATE TABLE")
             .appendField(new Blockly.FieldTextInput("table_name"), "TABLE_NAME");
+        // WELL for COLUMN blocks - only accepts 'sql_column' type
         this.appendStatementInput("COLUMNS")
-            .setCheck("sql_column")
-            .appendField("COLUMNS");
-        this.setColour("#6366f1");
-        this.setTooltip("Create a new table");
+            .setCheck("column_type");
+        this.setColour("#9B59B6");
+        this.setTooltip("Create a new table. Drag COLUMN blocks into the well below.");
         this.setHelpUrl("");
     }
 };
 
-// 2. Column Block (Emerald-500: #10b981)
+// -----------------------------------------------
+// 2. COLUMN Block (Green #8BC34A with yellow border effect)
+// Has a HILL (extrusion) that fits into CREATE TABLE's well
+// -----------------------------------------------
 Blockly.Blocks['sql_column'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField("Column")
-            .appendField(new Blockly.FieldTextInput("col_name"), "COL_NAME")
-            .appendField("Type")
+            .appendField("COLUMN")
+            .appendField(new Blockly.FieldTextInput("column_name"), "COL_NAME")
             .appendField(new Blockly.FieldDropdown([
                 ["INTEGER", "INTEGER"],
                 ["VARCHAR(255)", "VARCHAR(255)"],
                 ["TEXT", "TEXT"],
                 ["BOOLEAN", "BOOLEAN"],
                 ["TIMESTAMP", "TIMESTAMP"],
-                ["DECIMAL", "DECIMAL(10,2)"]
-            ]), "COL_TYPE");
-        this.setPreviousStatement(true, "sql_column");
-        this.setNextStatement(true, "sql_column");
-        this.setColour("#10b981");
-        this.setTooltip("Define a column");
+                ["DECIMAL(10,2)", "DECIMAL(10,2)"]
+            ]), "COL_TYPE")
+            .appendField(new Blockly.FieldDropdown([
+                ["(none)", ""],
+                ["PRIMARY KEY", "PRIMARY KEY"],
+                ["NOT NULL", "NOT NULL"],
+                ["UNIQUE", "UNIQUE"]
+            ]), "COL_PROPERTY");
+        // HILL - can stack with other COLUMN blocks inside CREATE TABLE
+        this.setPreviousStatement(true, "column_type");
+        this.setNextStatement(true, "column_type");
+        this.setColour("#8BC34A");
+        this.setTooltip("Define a column. Fits into CREATE TABLE's well.");
         this.setHelpUrl("");
     }
 };
 
-// 3. Insert into Block (Blue-600: #2563eb)
+// -----------------------------------------------
+// 3. INSERT INTO Block (Cyan #00BCD4)
+// Has a WELL that accepts COLUMN_VALUE blocks
+// -----------------------------------------------
 Blockly.Blocks['sql_insert'] = {
     init: function () {
         this.appendDummyInput()
             .appendField("INSERT INTO")
-            .appendField(new Blockly.FieldTextInput("table"), "TABLE");
-        this.appendValueInput("VALUES")
-            .setCheck("String")
-            .appendField("VALUES");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour("#2563eb");
-        this.setTooltip("Insert data into a table");
+            .appendField(new Blockly.FieldTextInput("table_name"), "TABLE_NAME");
+        // WELL for column values - only accepts 'column_value_type'
+        this.appendStatementInput("VALUES")
+            .setCheck("column_value_type");
+        this.setColour("#00BCD4");
+        this.setTooltip("Insert data into a table. Drag Column Name blocks into the well.");
+        this.setHelpUrl("");
     }
 };
 
-// 4. Update Block (Violet-600: #7c3aed (approx match to violet-600))
-// Tailwind violet-600 is #7c3aed
-Blockly.Blocks['sql_update'] = {
-    init: function () {
-        this.appendDummyInput()
-            .appendField("UPDATE")
-            .appendField(new Blockly.FieldTextInput("table"), "TABLE");
-        this.appendDummyInput()
-            .appendField("SET")
-            .appendField(new Blockly.FieldTextInput("col=val"), "ASSIGNMENT");
-        this.appendDummyInput()
-            .appendField("WHERE")
-            .appendField(new Blockly.FieldTextInput("condition"), "CONDITION");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour("#7c3aed");
-        this.setTooltip("Update data in a table");
-    }
-};
-
-// 5. Delete Block (Rose-600: #e11d48)
+// -----------------------------------------------
+// 4. DELETE FROM Block (Brown #8D6E63)
+// Has a WELL that accepts COLUMN_VALUE blocks
+// -----------------------------------------------
 Blockly.Blocks['sql_delete'] = {
     init: function () {
         this.appendDummyInput()
             .appendField("DELETE FROM")
-            .appendField(new Blockly.FieldTextInput("table"), "TABLE");
-        this.appendDummyInput()
-            .appendField("WHERE")
-            .appendField(new Blockly.FieldTextInput("condition"), "CONDITION");
-        this.setPreviousStatement(true, null);
-        this.setNextStatement(true, null);
-        this.setColour("#e11d48");
-        this.setTooltip("Delete data from a table");
+            .appendField(new Blockly.FieldTextInput("table_name"), "TABLE_NAME");
+        // WELL for column values - only accepts 'column_value_type'
+        this.appendStatementInput("VALUES")
+            .setCheck("column_value_type");
+        this.setColour("#8D6E63");
+        this.setTooltip("Delete data from a table. Drag Column Name blocks to specify conditions.");
+        this.setHelpUrl("");
     }
 };
 
-// --- Generator ---
+// -----------------------------------------------
+// 5. COLUMN NAME Block (Yellow #F1C40F)
+// Has a HILL that fits into INSERT/DELETE wells
+// -----------------------------------------------
+Blockly.Blocks['sql_column_value'] = {
+    init: function () {
+        this.appendDummyInput()
+            .appendField("column name")
+            .appendField(new Blockly.FieldTextInput("col"), "COL_NAME")
+            .appendField("value")
+            .appendField(new Blockly.FieldTextInput("value"), "COL_VALUE");
+        // HILL - fits into INSERT INTO and DELETE FROM
+        this.setPreviousStatement(true, "column_value_type");
+        this.setNextStatement(true, "column_value_type");
+        this.setColour("#F1C40F");
+        this.setTooltip("Column name and value pair. Fits into INSERT INTO or DELETE FROM.");
+        this.setHelpUrl("");
+    }
+};
+
+// -----------------------------------------------
+// 6. SELECT FROM Block (Cyan #00BCD4)
+// Has a WELL that accepts WHERE block
+// -----------------------------------------------
+Blockly.Blocks['sql_select'] = {
+    init: function () {
+        this.appendDummyInput()
+            .appendField("SELECT")
+            .appendField(new Blockly.FieldTextInput("*"), "COLUMNS")
+            .appendField("FROM")
+            .appendField(new Blockly.FieldTextInput("table_name"), "TABLE_NAME");
+        // WELL for WHERE block - only accepts 'where_type'
+        this.appendStatementInput("WHERE_CLAUSE")
+            .setCheck("where_type");
+        this.setColour("#00BCD4");
+        this.setTooltip("Select data from a table. Drag WHERE block into the well.");
+        this.setHelpUrl("");
+    }
+};
+
+// -----------------------------------------------
+// 7. WHERE Block (Orange #FF9800)
+// Has a HILL that fits into SELECT's well
+// Has a slot for condition blocks
+// -----------------------------------------------
+Blockly.Blocks['sql_where'] = {
+    init: function () {
+        this.appendDummyInput()
+            .appendField("WHERE");
+        // Slot for condition blocks - accepts 'condition_type'
+        this.appendValueInput("CONDITION")
+            .setCheck("condition_type");
+        // HILL - fits into SELECT FROM
+        this.setPreviousStatement(true, "where_type");
+        this.setColour("#FF9800");
+        this.setTooltip("WHERE clause. Drag condition blocks into the slot.");
+        this.setHelpUrl("");
+    }
+};
+
+// -----------------------------------------------
+// 8. ORDER BY Block (Red #E53935)
+// Has a dropdown for column selection
+// -----------------------------------------------
+Blockly.Blocks['sql_order_by'] = {
+    init: function () {
+        this.appendDummyInput()
+            .appendField("ORDER BY")
+            .appendField(new Blockly.FieldTextInput("column_name"), "ORDER_COLUMN")
+            .appendField(new Blockly.FieldDropdown([
+                ["ASC", "ASC"],
+                ["DESC", "DESC"]
+            ]), "ORDER_DIR");
+        // Can attach after WHERE
+        this.setPreviousStatement(true, "where_type");
+        this.setColour("#E53935");
+        this.setTooltip("Order results by column.");
+        this.setHelpUrl("");
+    }
+};
+
+// -----------------------------------------------
+// 9. Boolean Condition - Column Compare (Pink #E91E63)
+// dropdown(column) + dropdown(operator) + text(value)
+// -----------------------------------------------
+Blockly.Blocks['sql_condition_compare'] = {
+    init: function () {
+        this.appendDummyInput()
+            .appendField(new Blockly.FieldTextInput("column"), "LEFT_COL")
+            .appendField(new Blockly.FieldDropdown([
+                ["=", "="],
+                ["!=", "!="],
+                ["<", "<"],
+                [">", ">"],
+                ["<=", "<="],
+                [">=", ">="],
+                ["LIKE", "LIKE"]
+            ]), "OPERATOR")
+            .appendField(new Blockly.FieldTextInput("value"), "RIGHT_VALUE");
+        // Output type for condition slot
+        this.setOutput(true, "condition_type");
+        this.setColour("#E91E63");
+        this.setTooltip("Compare column to value. Fits into WHERE's condition slot.");
+        this.setHelpUrl("");
+    }
+};
+
+// -----------------------------------------------
+// 10. Boolean Condition - Column Dropdown Compare (Pink #E91E63)
+// Uses dynamic dropdown for columns
+// -----------------------------------------------
+Blockly.Blocks['sql_condition_column_dropdown'] = {
+    init: function () {
+        this.appendDummyInput()
+            .appendField(new Blockly.FieldTextInput("column"), "LEFT_COL")
+            .appendField(new Blockly.FieldDropdown([
+                ["=", "="],
+                ["!=", "!="],
+                ["<", "<"],
+                [">", ">"],
+                ["<=", "<="],
+                [">=", ">="]
+            ]), "OPERATOR")
+            .appendField(new Blockly.FieldTextInput("value"), "RIGHT_VALUE");
+        this.setOutput(true, "condition_type");
+        this.setColour("#E91E63");
+        this.setTooltip("Compare column to value.");
+        this.setHelpUrl("");
+    }
+};
+
+// -----------------------------------------------
+// 11. Boolean Condition - Compound AND/OR (Pink #E91E63)
+// condition + dropdown(AND, OR) + condition
+// -----------------------------------------------
+Blockly.Blocks['sql_condition_compound'] = {
+    init: function () {
+        this.appendValueInput("LEFT_CONDITION")
+            .setCheck("condition_type");
+        this.appendDummyInput()
+            .appendField(new Blockly.FieldDropdown([
+                ["AND", "AND"],
+                ["OR", "OR"]
+            ]), "LOGICAL_OP");
+        this.appendValueInput("RIGHT_CONDITION")
+            .setCheck("condition_type");
+        this.setInputsInline(true);
+        this.setOutput(true, "condition_type");
+        this.setColour("#E91E63");
+        this.setTooltip("Combine two conditions with AND/OR.");
+        this.setHelpUrl("");
+    }
+};
+
+// -----------------------------------------------
+// 12. UPDATE Block (Violet #7c3aed)
+// -----------------------------------------------
+Blockly.Blocks['sql_update'] = {
+    init: function () {
+        this.appendDummyInput()
+            .appendField("UPDATE")
+            .appendField(new Blockly.FieldTextInput("table_name"), "TABLE_NAME");
+        // WELL for SET values
+        this.appendStatementInput("SET_VALUES")
+            .setCheck("column_value_type")
+            .appendField("SET");
+        // WELL for WHERE condition
+        this.appendStatementInput("WHERE_CLAUSE")
+            .setCheck("where_type");
+        this.setColour("#7c3aed");
+        this.setTooltip("Update data in a table.");
+        this.setHelpUrl("");
+    }
+};
+
+// =====================================================
+// SQL GENERATORS
+// =====================================================
 
 const sqlGenerator = new Blockly.Generator('SQL');
 
+// CREATE TABLE generator
 sqlGenerator['sql_create_table'] = function (block) {
     var tableName = block.getFieldValue('TABLE_NAME');
     var columns = sqlGenerator.statementToCode(block, 'COLUMNS');
 
-    // Clean up last comma if present
     columns = columns.trim();
     if (columns.endsWith(',')) {
         columns = columns.slice(0, -1);
     }
 
-    var code = `CREATE TABLE ${tableName} (\n${columns}\n);`;
-    return code;
+    return `CREATE TABLE ${tableName} (\n${columns}\n);`;
 };
 
+// COLUMN generator
 sqlGenerator['sql_column'] = function (block) {
     var colName = block.getFieldValue('COL_NAME');
     var colType = block.getFieldValue('COL_TYPE');
-    return `  ${colName} ${colType},\n`; // Add comma for next item
+    var colProperty = block.getFieldValue('COL_PROPERTY');
+
+    var propertyStr = colProperty ? ' ' + colProperty : '';
+    return `  ${colName} ${colType}${propertyStr},\n`;
 };
 
+// INSERT INTO generator
 sqlGenerator['sql_insert'] = function (block) {
-    var table = block.getFieldValue('TABLE');
-    var values = Blockly.JavaScript.valueToCode(block, 'VALUES', Blockly.JavaScript.ORDER_ATOMIC) || "''";
-    return `INSERT INTO ${table} VALUES (${values});\n`;
+    var tableName = block.getFieldValue('TABLE_NAME');
+    var values = sqlGenerator.statementToCode(block, 'VALUES');
+
+    // Parse column-value pairs
+    var lines = values.trim().split('\n').filter(l => l.trim());
+    var columns = [];
+    var vals = [];
+
+    lines.forEach(line => {
+        var match = line.match(/(\w+)\s*=\s*(.+)/);
+        if (match) {
+            columns.push(match[1]);
+            vals.push(match[2]);
+        }
+    });
+
+    if (columns.length === 0) {
+        return `INSERT INTO ${tableName} VALUES ();`;
+    }
+
+    return `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${vals.join(', ')});`;
 };
 
-sqlGenerator['sql_update'] = function (block) {
-    var table = block.getFieldValue('TABLE');
-    var assignment = block.getFieldValue('ASSIGNMENT');
-    var condition = block.getFieldValue('CONDITION');
-    return `UPDATE ${table} SET ${assignment} WHERE ${condition};\n`;
+// COLUMN VALUE generator
+sqlGenerator['sql_column_value'] = function (block) {
+    var colName = block.getFieldValue('COL_NAME');
+    var colValue = block.getFieldValue('COL_VALUE');
+
+    // Add quotes if not a number
+    var valueStr = isNaN(colValue) ? `'${colValue}'` : colValue;
+    return `${colName} = ${valueStr}\n`;
 };
 
+// DELETE FROM generator
 sqlGenerator['sql_delete'] = function (block) {
-    var table = block.getFieldValue('TABLE');
-    var condition = block.getFieldValue('CONDITION');
-    return `DELETE FROM ${table} WHERE ${condition};\n`;
+    var tableName = block.getFieldValue('TABLE_NAME');
+    var values = sqlGenerator.statementToCode(block, 'VALUES');
+
+    // Parse conditions from column-value pairs
+    var lines = values.trim().split('\n').filter(l => l.trim());
+    var conditions = [];
+
+    lines.forEach(line => {
+        var match = line.match(/(\w+)\s*=\s*(.+)/);
+        if (match) {
+            conditions.push(`${match[1]} = ${match[2]}`);
+        }
+    });
+
+    if (conditions.length === 0) {
+        return `DELETE FROM ${tableName};`;
+    }
+
+    return `DELETE FROM ${tableName} WHERE ${conditions.join(' AND ')};`;
 };
 
+// SELECT FROM generator
+sqlGenerator['sql_select'] = function (block) {
+    var columns = block.getFieldValue('COLUMNS');
+    var tableName = block.getFieldValue('TABLE_NAME');
+    var whereClause = sqlGenerator.statementToCode(block, 'WHERE_CLAUSE');
+
+    var sql = `SELECT ${columns} FROM ${tableName}`;
+
+    if (whereClause.trim()) {
+        sql += ' ' + whereClause.trim();
+    }
+
+    return sql + ';';
+};
+
+// WHERE generator
+sqlGenerator['sql_where'] = function (block) {
+    var condition = sqlGenerator.valueToCode(block, 'CONDITION', 0) || 'true';
+    return `WHERE ${condition}\n`;
+};
+
+// ORDER BY generator
+sqlGenerator['sql_order_by'] = function (block) {
+    var column = block.getFieldValue('ORDER_COLUMN');
+    var direction = block.getFieldValue('ORDER_DIR');
+    return `ORDER BY ${column} ${direction}\n`;
+};
+
+// Condition Compare generator
+sqlGenerator['sql_condition_compare'] = function (block) {
+    var leftCol = block.getFieldValue('LEFT_COL');
+    var operator = block.getFieldValue('OPERATOR');
+    var rightValue = block.getFieldValue('RIGHT_VALUE');
+
+    // Add quotes if not a number
+    var valueStr = isNaN(rightValue) ? `'${rightValue}'` : rightValue;
+    return [`${leftCol} ${operator} ${valueStr}`, 0];
+};
+
+// Condition Column Dropdown generator
+sqlGenerator['sql_condition_column_dropdown'] = function (block) {
+    var leftCol = block.getFieldValue('LEFT_COL');
+    var operator = block.getFieldValue('OPERATOR');
+    var rightValue = block.getFieldValue('RIGHT_VALUE');
+
+    var valueStr = isNaN(rightValue) ? `'${rightValue}'` : rightValue;
+    return [`${leftCol} ${operator} ${valueStr}`, 0];
+};
+
+// Compound Condition generator
+sqlGenerator['sql_condition_compound'] = function (block) {
+    var leftCondition = sqlGenerator.valueToCode(block, 'LEFT_CONDITION', 0) || 'true';
+    var logicalOp = block.getFieldValue('LOGICAL_OP');
+    var rightCondition = sqlGenerator.valueToCode(block, 'RIGHT_CONDITION', 0) || 'true';
+
+    return [`(${leftCondition} ${logicalOp} ${rightCondition})`, 0];
+};
+
+// UPDATE generator
+sqlGenerator['sql_update'] = function (block) {
+    var tableName = block.getFieldValue('TABLE_NAME');
+    var setValues = sqlGenerator.statementToCode(block, 'SET_VALUES');
+    var whereClause = sqlGenerator.statementToCode(block, 'WHERE_CLAUSE');
+
+    // Parse SET values
+    var lines = setValues.trim().split('\n').filter(l => l.trim());
+    var assignments = [];
+
+    lines.forEach(line => {
+        var match = line.match(/(\w+)\s*=\s*(.+)/);
+        if (match) {
+            assignments.push(`${match[1]} = ${match[2]}`);
+        }
+    });
+
+    var sql = `UPDATE ${tableName} SET ${assignments.join(', ')}`;
+
+    if (whereClause.trim()) {
+        sql += ' ' + whereClause.trim();
+    }
+
+    return sql + ';';
+};
+
+// Scrub function for chaining blocks
 sqlGenerator.scrub_ = function (block, code, opt_thisOnly) {
     const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
     const nextCode = opt_thisOnly ? "" : sqlGenerator.blockToCode(nextBlock);
     return code + nextCode;
 };
 
+// =====================================================
+// TOOLBOX DEFINITION
+// =====================================================
 
-// --- Component ---
+const toolbox = {
+    kind: 'categoryToolbox',
+    contents: [
+        {
+            kind: 'category',
+            name: 'DDL - Tables',
+            colour: '#9B59B6',
+            contents: [
+                { kind: 'block', type: 'sql_create_table' },
+                { kind: 'block', type: 'sql_column' }
+            ]
+        },
+        {
+            kind: 'category',
+            name: 'DML - Insert/Update/Delete',
+            colour: '#00BCD4',
+            contents: [
+                { kind: 'block', type: 'sql_insert' },
+                { kind: 'block', type: 'sql_update' },
+                { kind: 'block', type: 'sql_delete' },
+                { kind: 'block', type: 'sql_column_value' }
+            ]
+        },
+        {
+            kind: 'category',
+            name: 'DQL - Select',
+            colour: '#00BCD4',
+            contents: [
+                { kind: 'block', type: 'sql_select' },
+                { kind: 'block', type: 'sql_where' },
+                { kind: 'block', type: 'sql_order_by' }
+            ]
+        },
+        {
+            kind: 'category',
+            name: 'Conditions',
+            colour: '#E91E63',
+            contents: [
+                { kind: 'block', type: 'sql_condition_compare' },
+                { kind: 'block', type: 'sql_condition_compound' }
+            ]
+        }
+    ]
+};
+
+// =====================================================
+// COMPONENT
+// =====================================================
 
 const BlockEditor = ({ onQueryChange, onInit }) => {
     const blocklyDiv = useRef(null);
@@ -182,7 +534,7 @@ const BlockEditor = ({ onQueryChange, onInit }) => {
     useEffect(() => {
         if (!blocklyDiv.current) return;
 
-        // Inject Blockly
+        // Inject Blockly WITHOUT toolbox (blocks come from left panel)
         workspaceRef.current = Blockly.inject(blocklyDiv.current, {
             scrollbars: true,
             trashcan: true,
@@ -208,7 +560,7 @@ const BlockEditor = ({ onQueryChange, onInit }) => {
             onInit(workspaceRef.current);
         }
 
-        // Listener
+        // Listener for code generation
         const updateListener = (event) => {
             if (event.type === Blockly.Events.BLOCK_CHANGE ||
                 event.type === Blockly.Events.BLOCK_MOVE ||

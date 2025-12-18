@@ -73,13 +73,13 @@ const MOCK_RESULTS = [
 // Block Definitions
 // Block Definitions (Mapped to Blockly Types)
 const BLOCKS = [
-  // DDL
+  // DDL - Data Definition Language
   {
     id: 'sql_create_table',
     label: 'CREATE TABLE',
     type: 'container',
     category: 'DDL',
-    color: 'bg-indigo-500',
+    color: 'bg-purple-600',
     inputs: [
       { id: 'table_name', placeholder: 'table_name', type: 'text' }
     ],
@@ -87,26 +87,49 @@ const BLOCKS = [
   },
   {
     id: 'sql_column',
-    label: 'Column',
+    label: 'COLUMN',
     type: 'simple',
     category: 'DDL',
-    color: 'bg-emerald-500',
+    color: 'bg-lime-500',
     inputs: [
-      { id: 'col_name', placeholder: 'col_name', type: 'text' },
-      { id: 'col_type', placeholder: 'INTEGER', type: 'text', preLabel: 'Type' }
+      { id: 'col_name', placeholder: 'column_name', type: 'text' },
+      { id: 'col_type', placeholder: 'INTEGER', type: 'dropdown', preLabel: '' },
+      { id: 'col_property', placeholder: 'PRIMARY KEY', type: 'dropdown', preLabel: '' }
     ]
   },
-  // DML
+  // DML - Data Manipulation Language
   {
     id: 'sql_insert',
     label: 'INSERT INTO',
     type: 'container',
     category: 'DML',
-    color: 'bg-blue-600',
+    color: 'bg-cyan-500',
     inputs: [
-      { id: 'table', placeholder: 'table', type: 'text' }
+      { id: 'table', placeholder: 'table_name', type: 'text' }
     ],
     innerLabel: 'VALUES'
+  },
+  {
+    id: 'sql_delete',
+    label: 'DELETE FROM',
+    type: 'container',
+    category: 'DML',
+    color: 'bg-amber-700',
+    inputs: [
+      { id: 'table', placeholder: 'table_name', type: 'text' }
+    ],
+    innerLabel: 'VALUES'
+  },
+  {
+    id: 'sql_column_value',
+    label: 'column name',
+    type: 'simple',
+    category: 'DML',
+    color: 'bg-yellow-400',
+    inputs: [
+      { id: 'col_name', placeholder: 'col', type: 'text' },
+      { id: 'col_value', placeholder: 'value', type: 'text', preLabel: '' }
+    ]
   },
   {
     id: 'sql_update',
@@ -115,20 +138,64 @@ const BLOCKS = [
     category: 'DML',
     color: 'bg-violet-600',
     inputs: [
-      { id: 'table', placeholder: 'table', type: 'text' }
+      { id: 'table', placeholder: 'table_name', type: 'text' }
     ],
     innerLabel: 'SET'
   },
+  // DQL - Data Query Language
   {
-    id: 'sql_delete',
-    label: 'DELETE FROM',
+    id: 'sql_select',
+    label: 'SELECT ... FROM',
     type: 'container',
-    category: 'DML',
-    color: 'bg-rose-600',
+    category: 'DQL',
+    color: 'bg-cyan-500',
     inputs: [
-      { id: 'table', placeholder: 'table', type: 'text' }
+      { id: 'columns', placeholder: '*', type: 'text' },
+      { id: 'table', placeholder: 'table_name', type: 'text', preLabel: 'FROM' }
     ],
     innerLabel: 'WHERE'
+  },
+  {
+    id: 'sql_where',
+    label: 'WHERE',
+    type: 'simple',
+    category: 'DQL',
+    color: 'bg-orange-500',
+    inputs: []
+  },
+  {
+    id: 'sql_order_by',
+    label: 'ORDER BY',
+    type: 'simple',
+    category: 'DQL',
+    color: 'bg-red-600',
+    inputs: [
+      { id: 'column', placeholder: 'column', type: 'dropdown' },
+      { id: 'direction', placeholder: 'ASC', type: 'dropdown' }
+    ]
+  },
+  // Conditions
+  {
+    id: 'sql_condition_compare',
+    label: 'Condition',
+    type: 'simple',
+    category: 'Conditions',
+    color: 'bg-pink-400',
+    inputs: [
+      { id: 'left_col', placeholder: 'column', type: 'text' },
+      { id: 'operator', placeholder: '=', type: 'dropdown' },
+      { id: 'right_value', placeholder: 'value', type: 'text' }
+    ]
+  },
+  {
+    id: 'sql_condition_compound',
+    label: 'AND / OR',
+    type: 'simple',
+    category: 'Conditions',
+    color: 'bg-pink-400',
+    inputs: [
+      { id: 'logical_op', placeholder: 'AND', type: 'dropdown' }
+    ]
   }
 ];
 
@@ -839,23 +906,31 @@ function App() {
               ) : (
                 /* Block Palette (Visible only in Block Mode) */
                 <div className="flex-1 overflow-auto scrollbar-thin p-4" style={{ backgroundColor: colors.bgSecondary }}>
-                  {['DDL', 'DML'].map(category => (
-                    <div key={category} className="mb-6 last:mb-0">
-                      <div className={`px-4 py-2 mb-2 rounded border font-bold text-xs uppercase tracking-widest text-center ${category === 'DML' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'}`}>
-                        {category}
+                  {['DDL', 'DML', 'DQL', 'Conditions'].map(category => {
+                    const categoryStyles = {
+                      DDL: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
+                      DML: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+                      DQL: 'bg-orange-500/10 border-orange-500/20 text-orange-400',
+                      Conditions: 'bg-pink-500/10 border-pink-500/20 text-pink-400'
+                    };
+                    return (
+                      <div key={category} className="mb-6 last:mb-0">
+                        <div className={`px-4 py-2 mb-2 rounded border font-bold text-xs uppercase tracking-widest text-center ${categoryStyles[category]}`}>
+                          {category}
+                        </div>
+                        <div className="space-y-1">
+                          {BLOCKS.filter(b => b.category === category).map((block) => (
+                            <DraggableBlock
+                              key={block.id}
+                              block={block}
+                              onDragStart={handleDragStart}
+                              isPaletteItem={true}
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        {BLOCKS.filter(b => b.category === category).map((block) => (
-                          <DraggableBlock
-                            key={block.id}
-                            block={block}
-                            onDragStart={handleDragStart}
-                            isPaletteItem={true}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
