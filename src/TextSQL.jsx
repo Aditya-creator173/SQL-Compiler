@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { Database, Table, Plus, Trash2, Eraser, Wand2, Play, Terminal, Menu, Moon, Sun, FileCode, Box, FileText, Loader2, Sparkles, Send, LogOut } from 'lucide-react';
+import { Database, Table, Plus, Trash2, Eraser, Wand2, Play, Terminal, Menu, Moon, Sun, FileCode, Box, FileText, Loader2, Sparkles, Send, LogOut, Search, Edit } from 'lucide-react';
 
 const ACTIONS = [
+    { id: 'SELECT_DATA', label: 'Select Data', icon: Search, color: 'bg-blue-100 text-blue-900 border-blue-200' },
     { id: 'CREATE_TABLE', label: 'Create Table', icon: Table, color: 'bg-amber-100 text-amber-900 border-amber-200' },
     { id: 'CREATE_DATABASE', label: 'Create Database', icon: Database, color: 'bg-cyan-100 text-cyan-900 border-cyan-200' },
     { id: 'INSERT_VALUES', label: 'Insert Values', icon: Plus, color: 'bg-violet-100 text-violet-900 border-violet-200' },
+    { id: 'UPDATE_VALUES', label: 'Update Values', icon: Edit, color: 'bg-teal-100 text-teal-900 border-teal-200' },
     { id: 'DELETE_TABLE', label: 'Delete Table', icon: Eraser, color: 'bg-lime-100 text-lime-900 border-lime-200' },
     { id: 'DELETE_DATABASE', label: 'Delete Database', icon: Trash2, color: 'bg-gray-200 text-gray-800 border-gray-300' },
     { id: 'DELETE_VALUES', label: 'Delete Values', icon: Trash2, color: 'bg-orange-100 text-orange-900 border-orange-200' },
@@ -55,16 +57,29 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
     const generateSQL = () => {
         let sql = '';
         switch (activeAction) {
-            case 'CREATE_TABLE':
+            case 'SELECT_DATA': {
+                const selectTable = formData.tableName || 'table_name';
+                const selectColumns = formData.columns || '*';
+                const selectWhere = formData.whereClause;
+                sql = `SELECT ${selectColumns} FROM ${selectTable}`;
+                if (selectWhere && selectWhere.trim()) {
+                    sql += ` WHERE ${selectWhere}`;
+                }
+                sql += ';';
+                break;
+            }
+            case 'CREATE_TABLE': {
                 const tableName = formData.tableName || 'new_table';
                 const columns = formData.columns || 'id INT PRIMARY KEY, name VARCHAR(100)';
                 sql = `CREATE TABLE ${tableName} (${columns});`;
                 break;
-            case 'CREATE_DATABASE':
+            }
+            case 'CREATE_DATABASE': {
                 const dbName = formData.dbName || 'new_database';
                 sql = `CREATE DATABASE ${dbName};`;
                 break;
-            case 'INSERT_VALUES':
+            }
+            case 'INSERT_VALUES': {
                 const insertTable = formData.tableName || 'table_name';
                 const insertColumns = formData.columns || '';
                 const values = formData.values || '';
@@ -74,19 +89,30 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
                     sql = `INSERT INTO ${insertTable} VALUES (${values});`;
                 }
                 break;
-            case 'DELETE_TABLE':
+            }
+            case 'UPDATE_VALUES': {
+                const updateTable = formData.tableName || 'table_name';
+                const setClause = formData.setClause || '';
+                const updateWhere = formData.whereClause || '1=1';
+                sql = `UPDATE ${updateTable} SET ${setClause} WHERE ${updateWhere};`;
+                break;
+            }
+            case 'DELETE_TABLE': {
                 const dropTable = formData.tableName || 'table_name';
                 sql = `DROP TABLE ${dropTable};`;
                 break;
-            case 'DELETE_DATABASE':
+            }
+            case 'DELETE_DATABASE': {
                 const dropDb = formData.dbName || 'database_name';
                 sql = `DROP DATABASE ${dropDb};`;
                 break;
-            case 'DELETE_VALUES':
+            }
+            case 'DELETE_VALUES': {
                 const deleteTable = formData.tableName || 'table_name';
                 const whereClause = formData.whereClause || '1=1';
                 sql = `DELETE FROM ${deleteTable} WHERE ${whereClause};`;
                 break;
+            }
             default:
                 sql = '';
         }
@@ -153,6 +179,89 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
 
     const renderInputForm = () => {
         switch (activeAction) {
+            case 'SELECT_DATA':
+                return (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                        <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: colors.text }}>
+                            <span className="w-6 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-xs">1</span>
+                            Enter table name:
+                        </h3>
+                        <input
+                            type="text"
+                            className="w-full p-2 rounded bg-black/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                            style={{ color: colors.text }}
+                            placeholder="e.g., users"
+                            value={formData.tableName || ''}
+                            onChange={(e) => handleInputChange('tableName', e.target.value)}
+                        />
+                        <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: colors.text }}>
+                            <span className="w-6 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-xs">2</span>
+                            Columns to select (optional):
+                        </h3>
+                        <input
+                            type="text"
+                            className="w-full p-2 rounded bg-black/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                            style={{ color: colors.text }}
+                            placeholder="* or name, email, age"
+                            value={formData.columns || ''}
+                            onChange={(e) => handleInputChange('columns', e.target.value)}
+                        />
+                        <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: colors.text }}>
+                            <span className="w-6 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-xs">3</span>
+                            WHERE condition (optional):
+                        </h3>
+                        <input
+                            type="text"
+                            className="w-full p-2 rounded bg-black/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                            style={{ color: colors.text }}
+                            placeholder="e.g., age > 18 AND status = 'active'"
+                            value={formData.whereClause || ''}
+                            onChange={(e) => handleInputChange('whereClause', e.target.value)}
+                        />
+                    </div>
+                );
+            case 'UPDATE_VALUES':
+                return (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                        <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: colors.text }}>
+                            <span className="w-6 h-6 rounded bg-teal-100 text-teal-600 flex items-center justify-center text-xs">1</span>
+                            Enter table name:
+                        </h3>
+                        <input
+                            type="text"
+                            className="w-full p-2 rounded bg-black/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                            style={{ color: colors.text }}
+                            placeholder="e.g., users"
+                            value={formData.tableName || ''}
+                            onChange={(e) => handleInputChange('tableName', e.target.value)}
+                        />
+                        <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: colors.text }}>
+                            <span className="w-6 h-6 rounded bg-teal-100 text-teal-600 flex items-center justify-center text-xs">2</span>
+                            SET clause:
+                        </h3>
+                        <input
+                            type="text"
+                            className="w-full p-2 rounded bg-black/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                            style={{ color: colors.text }}
+                            placeholder="e.g., name = 'John', age = 30"
+                            value={formData.setClause || ''}
+                            onChange={(e) => handleInputChange('setClause', e.target.value)}
+                        />
+                        <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: colors.text }}>
+                            <span className="w-6 h-6 rounded bg-teal-100 text-teal-600 flex items-center justify-center text-xs">3</span>
+                            WHERE condition:
+                        </h3>
+                        <input
+                            type="text"
+                            className="w-full p-2 rounded bg-black/10 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                            style={{ color: colors.text }}
+                            placeholder="e.g., id = 5"
+                            value={formData.whereClause || ''}
+                            onChange={(e) => handleInputChange('whereClause', e.target.value)}
+                        />
+                        <p className="text-sm text-yellow-400">⚠️ This will update rows matching the WHERE condition.</p>
+                    </div>
+                );
             case 'CREATE_TABLE':
                 return (
                     <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
@@ -485,7 +594,36 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
                                         <div className="h-full flex items-center justify-center">
                                             <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
                                         </div>
-                                    ) : results ? (
+                                    ) : results && results.length > 0 && results[0].Error ? (
+                                        /* Error Display */
+                                        <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                                                <Trash2 className="w-8 h-8 text-red-500" />
+                                            </div>
+                                            <p className="font-semibold text-red-500 mb-2">Query Error</p>
+                                            <div className="max-w-md p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                                                <p className="text-sm font-mono break-words" style={{ color: colors.textSecondary }}>
+                                                    {results[0].Error}
+                                                </p>
+                                            </div>
+                                            <p className="text-xs mt-4" style={{ color: colors.textMuted }}>
+                                                Check your SQL syntax and try again
+                                            </p>
+                                        </div>
+                                    ) : results && results.length > 0 && results[0].Result ? (
+                                        /* Success Message Display */
+                                        <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                            <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
+                                                <Terminal className="w-8 h-8 text-green-500" />
+                                            </div>
+                                            <p className="font-semibold text-green-500 mb-2">Query Executed Successfully</p>
+                                            <div className="max-w-md p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                                                <p className="text-sm font-mono" style={{ color: colors.textSecondary }}>
+                                                    {results[0].Result}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : results && results.length > 0 ? (
                                         <table className="w-full text-sm">
                                             <thead className="sticky top-0" style={{ backgroundColor: colors.bg, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
                                                 <tr>
@@ -501,7 +639,7 @@ export default function TextSQL({ theme, colors, onSwitchMode, activeMode, onTog
                                                     <tr key={idx} className="hover:opacity-80 transition-colors" style={{ backgroundColor: idx % 2 === 0 ? 'transparent' : colors.bgTertiary + '40', borderBottomColor: colors.border + '40', borderBottomWidth: '1px' }}>
                                                         {Object.values(row).map((value, colIdx) => (
                                                             <td key={colIdx} className="px-4 py-3" style={{ color: colors.textSecondary }}>
-                                                                {String(value)}
+                                                                {String(value ?? '')}
                                                             </td>
                                                         ))}
                                                     </tr>

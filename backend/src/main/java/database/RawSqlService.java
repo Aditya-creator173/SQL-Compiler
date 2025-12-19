@@ -32,6 +32,10 @@ public class RawSqlService {
 
         // Handle SHOW commands (queries that return results)
         if (upperSql.startsWith("SHOW ")) {
+            // Switch database first for SHOW TABLES etc
+            if (upperSql.contains("TABLES") && dbName != null && !dbName.isEmpty()) {
+                jdbcTemplate.execute("USE `" + dbName + "`");
+            }
             return jdbcTemplate.queryForList(sql);
         }
 
@@ -42,15 +46,17 @@ public class RawSqlService {
         }
 
         // For all other commands, switch to user's database first
-        jdbcTemplate.execute("USE `" + dbName + "`");
+        if (dbName != null && !dbName.isEmpty()) {
+            jdbcTemplate.execute("USE `" + dbName + "`");
+        }
 
         // SELECT and similar queries
         if (upperSql.startsWith("SELECT")) {
             return jdbcTemplate.queryForList(sql);
         } else {
             // DDL/DML commands (CREATE TABLE, INSERT, UPDATE, DELETE, etc.)
-            int updated = jdbcTemplate.update(sql);
-            return updated + " row(s) affected.";
+            jdbcTemplate.execute(sql);
+            return "Query executed successfully.";
         }
     }
 }

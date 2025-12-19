@@ -631,7 +631,7 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [activeMode, setActiveMode] = useState('normal'); // 'normal' | 'block' | 'text'
   const [isThemeHovered, setIsThemeHovered] = useState(false);
-  const [query, setQuery] = useState('SELECT * FROM users WHERE status = "Active" LIMIT 10;');
+  const [query, setQuery] = useState('-- Write your SQL query here\n-- Example: CREATE TABLE users (id INT, name VARCHAR(100));');
   const [blockQuery, setBlockQuery] = useState('');
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -861,17 +861,19 @@ function App() {
       ) : (
         <PanelGroup direction="horizontal">
 
-          {/* COLUMN A: Schema Navigator */}
+          {/* COLUMN A: Schema Navigator OR Block Palette */}
           <Panel defaultSize={15} minSize={10}>
             <div className="h-full flex flex-col" style={{ backgroundColor: colors.bgSecondary, borderRightColor: colors.border, borderRightWidth: '1px' }}>
               {/* Conditional Rendering: Database Schema OR Block Palette */}
               {activeMode === 'normal' ? (
                 <>
+                  {/* Database Schema Header */}
                   <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
                     <Database className={`w-5 h-5 ${theme === 'light' ? 'text-cyan-600' : 'text-cyan-400'}`} />
                     <h2 className="font-semibold" style={{ color: colors.text }}>Database Schema</h2>
                   </div>
 
+                  {/* Schema Content */}
                   <div className="flex-1 overflow-auto scrollbar-thin p-4 space-y-4">
                     {schemaLoading ? (
                       <div className="flex items-center gap-2 text-sm" style={{ color: colors.textMuted }}>
@@ -890,7 +892,7 @@ function App() {
                             <span className="font-bold font-mono">{tableName}</span>
                           </div>
                           <div className="pl-6 space-y-1">
-                            {tableData.columns.map((col) => (
+                            {tableData.columns && tableData.columns.map((col) => (
                               <div key={col.name} className="flex items-center gap-2 text-xs font-mono" style={{ color: colors.textMuted }}>
                                 {col.isPrimary && <Key className="w-3 h-3 text-fuchsia-400" />}
                                 <span className={col.isPrimary ? 'text-fuchsia-300' : ''}>{col.name}</span>
@@ -904,34 +906,47 @@ function App() {
                   </div>
                 </>
               ) : (
-                /* Block Palette (Visible only in Block Mode) */
-                <div className="flex-1 overflow-auto scrollbar-thin p-4" style={{ backgroundColor: colors.bgSecondary }}>
-                  {['DDL', 'DML', 'DQL', 'Conditions'].map(category => {
-                    const categoryStyles = {
-                      DDL: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
-                      DML: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
-                      DQL: 'bg-orange-500/10 border-orange-500/20 text-orange-400',
-                      Conditions: 'bg-pink-500/10 border-pink-500/20 text-pink-400'
-                    };
-                    return (
-                      <div key={category} className="mb-6 last:mb-0">
-                        <div className={`px-4 py-2 mb-2 rounded border font-bold text-xs uppercase tracking-widest text-center ${categoryStyles[category]}`}>
-                          {category}
+                <>
+                  {/* Block Palette Header */}
+                  <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
+                    <Box className={`w-5 h-5 text-purple-400`} />
+                    <h2 className="font-semibold" style={{ color: colors.text }}>SQL Blocks</h2>
+                  </div>
+
+                  {/* Block Palette - Draggable Blocks */}
+                  <div className="flex-1 overflow-auto scrollbar-thin p-4" style={{ backgroundColor: colors.bgSecondary }}>
+                    {['DDL', 'DML', 'DQL', 'Conditions'].map(category => {
+                      const categoryStyles = {
+                        DDL: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
+                        DML: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+                        DQL: 'bg-orange-500/10 border-orange-500/20 text-orange-400',
+                        Conditions: 'bg-pink-500/10 border-pink-500/20 text-pink-400'
+                      };
+                      return (
+                        <div key={category} className="mb-6 last:mb-0">
+                          <div className={`px-4 py-2 mb-2 rounded border font-bold text-xs uppercase tracking-widest text-center ${categoryStyles[category]}`}>
+                            {category}
+                          </div>
+                          <div className="space-y-1">
+                            {BLOCKS.filter(b => b.category === category).map((block) => (
+                              <DraggableBlock
+                                key={block.id}
+                                block={block}
+                                onDragStart={handleDragStart}
+                                isPaletteItem={true}
+                              />
+                            ))}
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          {BLOCKS.filter(b => b.category === category).map((block) => (
-                            <DraggableBlock
-                              key={block.id}
-                              block={block}
-                              onDragStart={handleDragStart}
-                              isPaletteItem={true}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Drag instruction */}
+                  <div className="p-3 border-t text-xs text-center" style={{ borderColor: colors.border, color: colors.textMuted }}>
+                    Drag blocks onto the workspace →
+                  </div>
+                </>
               )}
             </div>
           </Panel>
@@ -1108,11 +1123,40 @@ function App() {
                       <div className="h-full flex items-center justify-center">
                         <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
                       </div>
-                    ) : results ? (
+                    ) : results && results.length > 0 && results[0].Error ? (
+                      /* Error Display */
+                      <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                          <X className="w-8 h-8 text-red-500" />
+                        </div>
+                        <p className="font-semibold text-red-500 mb-2">Query Error</p>
+                        <div className="max-w-md p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                          <p className="text-sm font-mono break-words" style={{ color: colors.textSecondary }}>
+                            {results[0].Error}
+                          </p>
+                        </div>
+                        <p className="text-xs mt-4" style={{ color: colors.textMuted }}>
+                          Check your SQL syntax and try again
+                        </p>
+                      </div>
+                    ) : results && results.length > 0 && results[0].Result ? (
+                      /* Success Message Display */
+                      <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                        <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
+                          <Terminal className="w-8 h-8 text-green-500" />
+                        </div>
+                        <p className="font-semibold text-green-500 mb-2">Query Executed Successfully</p>
+                        <div className="max-w-md p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                          <p className="text-sm font-mono" style={{ color: colors.textSecondary }}>
+                            {results[0].Result}
+                          </p>
+                        </div>
+                      </div>
+                    ) : results && results.length > 0 ? (
                       <table className="w-full text-sm">
                         <thead className="sticky top-0" style={{ backgroundColor: colors.bg, borderBottomColor: colors.border, borderBottomWidth: '1px' }}>
                           <tr>
-                            {Object.keys(results[0]).map((key) => (
+                            {Object.keys(results[0] || {}).map((key) => (
                               <th key={key} className="px-4 py-3 text-left font-semibold font-mono text-xs uppercase tracking-wide" style={{ color: colors.text }}>
                                 {key}
                               </th>
@@ -1124,7 +1168,7 @@ function App() {
                             <tr key={idx} className="hover:opacity-80 transition-colors" style={{ backgroundColor: idx % 2 === 0 ? 'transparent' : colors.bgTertiary + '40', borderBottomColor: colors.border + '40', borderBottomWidth: '1px' }}>
                               {Object.values(row).map((value, colIdx) => (
                                 <td key={colIdx} className="px-4 py-3" style={{ color: colors.textSecondary }}>
-                                  {value}
+                                  {String(value ?? '')}
                                 </td>
                               ))}
                             </tr>

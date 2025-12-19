@@ -534,7 +534,7 @@ const BlockEditor = ({ onQueryChange, onInit }) => {
     useEffect(() => {
         if (!blocklyDiv.current) return;
 
-        // Inject Blockly WITHOUT toolbox (blocks come from left panel)
+        // Inject Blockly WITHOUT native toolbox - using custom sidebar for drag-drop
         workspaceRef.current = Blockly.inject(blocklyDiv.current, {
             scrollbars: true,
             trashcan: true,
